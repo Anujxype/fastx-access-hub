@@ -5,6 +5,7 @@ import CFMSLogo from '@/components/CFMSLogo';
 import LogsViewer from '@/components/admin/LogsViewer';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import KeysManager from '@/components/admin/KeysManager';
+import CustomEndpointManager from '@/components/admin/CustomEndpointManager';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
