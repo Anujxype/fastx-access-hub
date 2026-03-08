@@ -1,20 +1,17 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { MASTER_PASSWORD } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
-import { Crown, Loader2, ArrowLeft, ShieldCheck, Eye, Pencil } from 'lucide-react';
-
-const ROLE_LABELS = {
-  full: { label: 'Full Access', desc: 'All rights', icon: Crown, color: 'text-primary' },
-  limited: { label: 'Limited', desc: 'Manage, no delete', icon: Pencil, color: 'text-accent' },
-  monitor: { label: 'Monitor', desc: 'Read-only', icon: Eye, color: 'text-success' },
-};
+import { Crown, Loader2, ArrowLeft, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
 
 const MasterLogin = () => {
   const navigate = useNavigate();
   const { user, masterAdmin, role, loading, error, signInWithGoogle, signOut } = useMasterAuth();
+  const [password, setPassword] = useState('');
+  const [passError, setPassError] = useState('');
+  const [passLoading, setPassLoading] = useState(false);
 
-  // If authenticated and authorized, redirect to master panel
   useEffect(() => {
     if (!loading && user && masterAdmin && role) {
       localStorage.setItem('cfms_master', 'true');
@@ -23,8 +20,22 @@ const MasterLogin = () => {
     }
   }, [loading, user, masterAdmin, role, navigate]);
 
-  // If user is logged in but not authorized, show denial
   const isDenied = !loading && user && !masterAdmin && error;
+
+  const handlePasswordLogin = () => {
+    setPassLoading(true);
+    setPassError('');
+    setTimeout(() => {
+      if (password === MASTER_PASSWORD) {
+        localStorage.setItem('cfms_master', 'true');
+        localStorage.setItem('cfms_master_role', 'full');
+        navigate('/master');
+      } else {
+        setPassError('Invalid master password');
+      }
+      setPassLoading(false);
+    }, 800);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -49,7 +60,7 @@ const MasterLogin = () => {
             <div className="h-px w-6 bg-gradient-to-r from-transparent to-primary/40" />
             <p className="text-muted-foreground text-[11px] tracking-[0.25em] flex items-center gap-2">
               <Crown className="w-3 h-3 text-primary animate-pulse-soft" />
-              GOOGLE AUTH REQUIRED
+              SUPREME ACCESS ONLY
             </p>
             <div className="h-px w-6 bg-gradient-to-l from-transparent to-primary/40" />
           </div>
@@ -76,6 +87,7 @@ const MasterLogin = () => {
             </div>
           ) : (
             <div className="space-y-5">
+              {/* Google Sign In */}
               <button
                 onClick={signInWithGoogle}
                 className="btn-primary w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5"
@@ -96,21 +108,45 @@ const MasterLogin = () => {
                 </div>
               )}
 
-              {/* Role info */}
-              <div className="pt-2 space-y-2">
-                <p className="text-[10px] font-semibold text-muted-foreground tracking-[0.2em] text-center">ACCESS TIERS</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(ROLE_LABELS).map(([key, val]) => {
-                    const Icon = val.icon;
-                    return (
-                      <div key={key} className="glass p-2.5 text-center rounded-lg">
-                        <Icon className={`w-4 h-4 mx-auto mb-1 ${val.color}`} />
-                        <p className="text-[10px] font-bold">{val.label}</p>
-                        <p className="text-[9px] text-muted-foreground">{val.desc}</p>
-                      </div>
-                    );
-                  })}
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[10px] text-muted-foreground tracking-[0.2em]">OR</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              {/* Password Login */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-primary tracking-[0.2em]">
+                  <Lock className="w-4 h-4" />
+                  MASTER PASSWORD
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handlePasswordLogin()}
+                    placeholder="Enter master password"
+                    className="input-glass w-full text-sm pr-10"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Crown className="w-4 h-4 text-primary/30" />
+                  </div>
                 </div>
+
+                {passError && (
+                  <div className="flex items-center gap-2.5 text-destructive text-sm animate-fade-in p-3.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <span className="w-2 h-2 rounded-full bg-destructive animate-pulse flex-shrink-0" />
+                    {passError}
+                  </div>
+                )}
+
+                <button onClick={handlePasswordLogin} disabled={passLoading} className="w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-all">
+                  {passLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                  {passLoading ? 'Authenticating...' : 'Login with Password'}
+                  {!passLoading && <ArrowRight className="w-4 h-4 ml-1" />}
+                </button>
               </div>
             </div>
           )}
