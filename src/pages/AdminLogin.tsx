@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_PASSWORD } from '@/lib/supabase';
+import CFMSLogo from '@/components/CFMSLogo';
 import { Shield, Lock, Loader2, ArrowLeft, AlertTriangle, ArrowRight } from 'lucide-react';
 
 const AdminLogin = () => {
@@ -47,11 +48,11 @@ const AdminLogin = () => {
           <div className="relative mb-6">
             <div className="absolute -inset-4 rounded-full bg-accent/15 blur-2xl animate-glow-admin" />
             <div className="absolute -inset-8 rounded-full bg-accent/5 blur-3xl" />
-            <div className="relative w-20 h-20 rounded-2xl bg-accent/10 border-2 border-accent/30 flex items-center justify-center animate-float">
-              <Shield className="w-10 h-10 text-accent" />
+            <div className="relative">
+              <CFMSLogo size={80} className="ring-2 ring-accent/30 shadow-[0_0_40px_-8px_hsl(38_92%_50%/0.3)] animate-float" />
             </div>
           </div>
-          <h1 className="text-3xl font-black tracking-tight">Admin Panel</h1>
+          <h1 className="text-3xl font-black tracking-tight">CFMS Admin</h1>
           <div className="flex items-center gap-3 mt-3">
             <div className="h-px w-6 bg-gradient-to-r from-transparent to-accent/40" />
             <p className="text-muted-foreground text-[11px] tracking-[0.25em] flex items-center gap-2">
