@@ -25,6 +25,12 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
+const ROLE_BADGE: Record<MasterRole, { label: string; color: string }> = {
+  full: { label: 'FULL ACCESS', color: 'bg-primary/15 text-primary border-primary/25' },
+  limited: { label: 'LIMITED', color: 'bg-accent/15 text-accent border-accent/25' },
+  monitor: { label: 'MONITOR', color: 'bg-success/15 text-success border-success/25' },
+};
+
 const MasterPanel = () => {
   const [tab, setTab] = useState('panels');
   const [panels, setPanels] = useState<ManagedPanel[]>([]);
@@ -52,10 +58,13 @@ const MasterPanel = () => {
   const [newPass, setNewPass] = useState('');
 
   const navigate = useNavigate();
+  const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast } = useMasterAuth();
 
   useEffect(() => {
-    if (!localStorage.getItem('cfms_master')) navigate('/master-login');
-  }, [navigate]);
+    if (!authLoading && (!user || !masterAdmin)) {
+      navigate('/master-login');
+    }
+  }, [authLoading, user, masterAdmin, navigate]);
 
   const fetchPanels = async () => {
     setLoading(true);
