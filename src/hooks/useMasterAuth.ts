@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
@@ -18,6 +18,16 @@ interface MasterAuthState {
   error: string | null;
 }
 
+async function checkMasterAdmin(email: string | undefined) {
+  if (!email) return { data: null, error: null };
+  const { data, error } = await supabase
+    .from('master_admins')
+    .select('email, role, display_name')
+    .eq('email', email)
+    .maybeSingle();
+  return { data, error };
+}
+
 export function useMasterAuth() {
   const [state, setState] = useState<MasterAuthState>({
     user: null,
@@ -26,43 +36,42 @@ export function useMasterAuth() {
     loading: true,
     error: null,
   });
+  const initialized = useRef(false);
 
   useEffect(() => {
+    // Set up auth listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const email = session.user.email;
-        const { data, error } = await supabase
-          .from('master_admins')
-          .select('email, role, display_name')
-          .eq('email', email)
-          .maybeSingle();
-
+        const { data, error } = await checkMasterAdmin(session.user.email);
         if (error) {
           setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: 'Failed to verify admin status' });
         } else if (!data) {
-          setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${email} is not a registered master admin` });
+          setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${session.user.email} is not a registered master admin` });
         } else {
+          // Auto-set localStorage for Google auth too
+          localStorage.setItem('cfms_master', 'true');
+          localStorage.setItem('cfms_master_role', data.role);
           setState({ user: session.user, masterAdmin: data as MasterAdmin, role: data.role as MasterRole, loading: false, error: null });
         }
       } else {
-        setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
+        if (initialized.current) {
+          setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
+        }
       }
     });
 
+    // THEN check existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      initialized.current = true;
       if (session?.user) {
-        const email = session.user.email;
-        const { data, error } = await supabase
-          .from('master_admins')
-          .select('email, role, display_name')
-          .eq('email', email)
-          .maybeSingle();
-
+        const { data, error } = await checkMasterAdmin(session.user.email);
         if (error) {
           setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: 'Failed to verify admin status' });
         } else if (!data) {
-          setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${email} is not a registered master admin` });
+          setState({ user: session.user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${session.user.email} is not a registered master admin` });
         } else {
+          localStorage.setItem('cfms_master', 'true');
+          localStorage.setItem('cfms_master_role', data.role);
           setState({ user: session.user, masterAdmin: data as MasterAdmin, role: data.role as MasterRole, loading: false, error: null });
         }
       } else {
@@ -94,7 +103,7 @@ export function useMasterAuth() {
   };
 
   const storedRole = typeof window !== 'undefined' ? localStorage.getItem('cfms_master_role') : null;
-  const isPasswordAuth = typeof window !== 'undefined' && localStorage.getItem('cfms_master') === 'true' && !!storedRole;
+  const isPasswordAuth = typeof window !== 'undefined' && localStorage.getItem('cfms_master') === 'true' && !!storedRole && !state.user;
   const effectiveRole: MasterRole | null = state.role ?? (
     storedRole === 'full' || storedRole === 'limited' || storedRole === 'monitor'
       ? (storedRole as MasterRole)
