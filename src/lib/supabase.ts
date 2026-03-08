@@ -107,3 +107,21 @@ export function getDeviceInfo(): string {
   if (/Tablet|iPad/i.test(ua)) return 'Tablet';
   return 'Desktop';
 }
+
+let cachedGeoData: { ip: string; location: string } | null = null;
+
+export async function getGeoInfo(): Promise<{ ip: string; location: string }> {
+  if (cachedGeoData) return cachedGeoData;
+  try {
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error('Geo API failed');
+    const data = await res.json();
+    cachedGeoData = {
+      ip: data.ip || 'Unknown',
+      location: [data.city, data.region, data.country_name].filter(Boolean).join(', ') || 'Unknown',
+    };
+    return cachedGeoData;
+  } catch {
+    return { ip: 'Unknown', location: 'Unknown' };
+  }
+}
