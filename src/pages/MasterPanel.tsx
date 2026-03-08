@@ -390,7 +390,7 @@ const MasterPanel = () => {
                 <div>
                   <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" /> Allowed Endpoints</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {ENDPOINTS.map(ep => {
+                    {allEndpoints.map(ep => {
                       const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
                       return (
                         <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
