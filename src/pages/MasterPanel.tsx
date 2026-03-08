@@ -142,7 +142,13 @@ const MasterPanel = () => {
     const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50);
     setBroadcasts(data || []);
     setBcSending(false);
-    toast({ title: 'Broadcast Sent' });
+    toast({ title: 'Broadcast Sent', description: 'Message delivered to all targeted panels' });
+  };
+
+  const deleteBroadcast = async (id: string) => {
+    await supabase.from('broadcasts').delete().eq('id', id);
+    setBroadcasts(broadcasts.filter(b => b.id !== id));
+    toast({ title: 'Broadcast Deleted' });
   };
 
   const copyToClipboard = (text: string) => {
