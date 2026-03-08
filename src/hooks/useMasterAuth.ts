@@ -41,55 +41,50 @@ export function useMasterAuth() {
     user: null,
     masterAdmin: null,
     role: null,
-    loading: false,
+    loading: true,
     error: null,
   });
   const initialized = useRef(false);
-  const processingRef = useRef(false);
 
   const processUser = useCallback(async (user: User | null) => {
-    // Prevent concurrent processing
-    if (processingRef.current) return;
-    processingRef.current = true;
-
-    try {
-      if (user) {
-        const { data, error } = await checkMasterAdmin(user.email);
-        if (error) {
-          setState({ user, masterAdmin: null, role: null, loading: false, error: 'Failed to verify admin status' });
-        } else if (!data) {
-          setState({ user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${user.email} is not a registered master admin` });
-        } else {
-          const validRole = isValidRole(data.role) ? data.role : 'monitor';
-          localStorage.setItem('cfms_master', 'true');
-          localStorage.setItem('cfms_master_role', validRole);
-          setState({ user, masterAdmin: data as MasterAdmin, role: validRole, loading: false, error: null });
-        }
+    if (user) {
+      setState(s => ({ ...s, loading: true, error: null }));
+      const { data, error } = await checkMasterAdmin(user.email);
+      if (error) {
+        setState({ user, masterAdmin: null, role: null, loading: false, error: 'Failed to verify admin status' });
+      } else if (!data) {
+        setState({ user, masterAdmin: null, role: null, loading: false, error: `Access denied: ${user.email} is not a registered master admin` });
       } else {
-        if (initialized.current) {
-          setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
-        }
+        const validRole = isValidRole(data.role) ? data.role : 'monitor';
+        localStorage.setItem('cfms_master', 'true');
+        localStorage.setItem('cfms_master_role', validRole);
+        setState({ user, masterAdmin: data as MasterAdmin, role: validRole, loading: false, error: null });
       }
-    } finally {
-      processingRef.current = false;
+    } else {
+      setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
     }
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    let ignore = false;
+
+    // 1. Check existing session first
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (ignore) return;
+      initialized.current = true;
       await processUser(session?.user ?? null);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      initialized.current = true;
-      if (session?.user) {
-        await processUser(session.user);
-      } else {
-        setState(s => ({ ...s, loading: false }));
-      }
+    // 2. Listen for future auth changes (sign-in, sign-out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!initialized.current) return; // Skip until getSession completes
+      await processUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      ignore = true;
+      subscription.unsubscribe();
+    };
   }, [processUser]);
 
   const signInWithGoogle = useCallback(async () => {
