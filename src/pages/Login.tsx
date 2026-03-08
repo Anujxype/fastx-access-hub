@@ -11,7 +11,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem('fastx_key');
+    const stored = localStorage.getItem('cfms_key');
     if (stored) navigate('/portal');
   }, [navigate]);
 
