@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import FastXLogo from '@/components/FastXLogo';
-import { Key, Shield, Loader2 } from 'lucide-react';
+import { Key, Shield, Loader2, Sparkles } from 'lucide-react';
 
 const Login = () => {
   const [key, setKey] = useState('');
@@ -19,7 +19,6 @@ const Login = () => {
     if (!key.trim()) return;
     setLoading(true);
     setError('');
-
     try {
       const { data, error: dbError } = await supabase
         .from('api_keys')
@@ -29,33 +28,15 @@ const Login = () => {
         .maybeSingle();
 
       if (dbError) throw dbError;
-      if (!data) {
-        setError('Invalid or inactive access key');
-        setLoading(false);
-        return;
-      }
+      if (!data) { setError('Invalid or inactive access key'); setLoading(false); return; }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) { setError('This key has expired'); setLoading(false); return; }
 
-      // Check expiry
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        setError('This key has expired');
-        setLoading(false);
-        return;
-      }
-
-      // Increment uses
       await supabase.from('api_keys').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id);
-
       localStorage.setItem('fastx_key', data.key_value);
       localStorage.setItem('fastx_key_name', data.name);
       localStorage.setItem('fastx_key_id', data.id);
 
-      // Check for broadcasts
-      const { data: broadcasts } = await supabase
-        .from('broadcasts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
+      const { data: broadcasts } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(1);
       if (broadcasts && broadcasts.length > 0) {
         const lastSeen = localStorage.getItem('fastx_last_broadcast');
         if (lastSeen !== broadcasts[0].id) {
@@ -63,7 +44,6 @@ const Login = () => {
           localStorage.setItem('fastx_last_broadcast', broadcasts[0].id);
         }
       }
-
       navigate('/portal');
     } catch (err: any) {
       setError(err.message || 'Connection error');
@@ -73,24 +53,33 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md animate-in">
-        <div className="flex flex-col items-center mb-8">
-          <div className="animate-glow mb-6" style={{ animation: 'glowPulse 3s ease-in-out infinite' }}>
-            <FastXLogo size={72} />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient background orbs */}
+      <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full bg-primary/5 blur-[100px] animate-float" />
+      <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-primary/8 blur-[100px] animate-float" style={{ animationDelay: '2s' }} />
+
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-10 animate-in">
+          <div className="relative mb-6 animate-glow-pulse animate-float">
+            <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
+            <FastXLogo size={80} />
           </div>
-          <h1 className="text-4xl font-bold text-primary mb-2">
-            Fast<span className="text-foreground">X</span>
+          <h1 className="text-5xl font-black tracking-tight mb-2">
+            <span className="bg-gradient-to-r from-primary to-[hsl(160_70%_55%)] bg-clip-text text-transparent">Fast</span>
+            <span className="text-foreground">X</span>
           </h1>
-          <p className="text-muted-foreground text-sm tracking-[0.2em] flex items-center gap-2">
-            <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          <p className="text-muted-foreground text-xs tracking-[0.25em] flex items-center gap-2 mt-1">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
             SECURE ACCESS GATEWAY
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
           </p>
         </div>
 
-        <div className="glass-strong p-6 space-y-5 animate-in-delay-1">
+        {/* Login Card */}
+        <div className="glass-strong p-7 space-y-5 animate-in-delay-1 animate-border-glow">
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
+            <label className="flex items-center gap-2 text-xs font-semibold text-primary mb-2.5 tracking-wider">
               <Key className="w-4 h-4" />
               ACCESS KEY
             </label>
@@ -100,32 +89,35 @@ const Login = () => {
               onChange={e => setKey(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               placeholder="Enter your access key"
-              className="input-glass w-full"
+              className="input-glass w-full text-sm"
               autoFocus
             />
           </div>
 
           {error && (
-            <p className="text-destructive text-sm animate-fade-in">{error}</p>
+            <div className="flex items-center gap-2 text-destructive text-sm animate-in p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+              {error}
+            </div>
           )}
 
-          <button onClick={handleLogin} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+          <button onClick={handleLogin} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2.5 text-sm font-bold tracking-wide">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-            Access Portal
+            {loading ? 'Verifying...' : 'Access Portal'}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-1">
             <button
               onClick={() => navigate('/admin-login')}
-              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              className="text-muted-foreground hover:text-accent text-sm transition-all duration-300 hover:tracking-wide"
             >
               Admin Access →
             </button>
           </div>
         </div>
 
-        <p className="text-center text-muted-foreground/50 text-xs mt-6">
-          Protected by Akshu Security Protocol
+        <p className="text-center text-muted-foreground/40 text-[10px] mt-8 tracking-[0.15em] animate-in-delay-3">
+          PROTECTED BY AKSHU SECURITY PROTOCOL
         </p>
       </div>
     </div>
