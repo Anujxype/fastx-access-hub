@@ -8,6 +8,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
 
 export const ADMIN_PASSWORD = 'stk7890';
+export const MASTER_PASSWORD = 'cfms7890';
 
 // Matches actual DB column names
 export interface ApiKey {
@@ -19,6 +20,7 @@ export interface ApiKey {
   expires_at: string | null;
   allowed_ips: string | null;
   created_at: string;
+  panel_id: string | null;
 }
 
 export interface ApiLog {
@@ -33,12 +35,25 @@ export interface ApiLog {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+  panel_id: string | null;
 }
 
 export interface Broadcast {
   id: string;
   title: string;
   message: string;
+  created_at: string;
+  target_panel_id: string | null;
+}
+
+export interface ManagedPanel {
+  id: string;
+  panel_name: string;
+  master_license_key: string;
+  is_active: boolean;
+  expiry_date: string | null;
+  allowed_endpoints: string[];
+  panel_password: string;
   created_at: string;
 }
 
@@ -57,6 +72,8 @@ export const ENDPOINTS = [
   { endpoint: '/pan', param: 'pan', label: 'PAN Lookup', icon: 'FileCheck' },
 ];
 
+export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
+
 export function generateKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = 'ak_';
@@ -64,6 +81,19 @@ export function generateKey(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+export function generateLicenseKey(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const segments = [];
+  for (let s = 0; s < 4; s++) {
+    let seg = '';
+    for (let i = 0; i < 4; i++) {
+      seg += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    segments.push(seg);
+  }
+  return 'CFMS-' + segments.join('-');
 }
 
 export function getDeviceInfo(): string {

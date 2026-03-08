@@ -7,6 +7,10 @@ import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
 import Portal from "./pages/Portal";
 import AdminPanel from "./pages/AdminPanel";
+import MasterLogin from "./pages/MasterLogin";
+import MasterPanel from "./pages/MasterPanel";
+import SubAdminPanel from "./pages/SubAdminPanel";
+import PanelDisabled from "./pages/PanelDisabled";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +26,10 @@ const App = () => (
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/portal" element={<Portal />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/master-login" element={<MasterLogin />} />
+          <Route path="/master" element={<MasterPanel />} />
+          <Route path="/panel/:panelId" element={<SubAdminPanel />} />
+          <Route path="/panel-disabled" element={<PanelDisabled />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
