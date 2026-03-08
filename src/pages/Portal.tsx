@@ -24,13 +24,13 @@ const Portal = () => {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
-  const keyName = localStorage.getItem('fastx_key_name') || 'User';
-  const keyId = localStorage.getItem('fastx_key_id');
+  const keyName = localStorage.getItem('cfms_key_name') || 'User';
+  const keyId = localStorage.getItem('cfms_key_id');
 
   useEffect(() => {
-    if (!localStorage.getItem('fastx_key')) { navigate('/'); return; }
-    const bc = localStorage.getItem('fastx_broadcast');
-    if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('fastx_broadcast'); }
+    if (!localStorage.getItem('cfms_key')) { navigate('/'); return; }
+    const bc = localStorage.getItem('cfms_broadcast');
+    if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('cfms_broadcast'); }
     fetchAllEndpoints().then(setAllEndpoints);
   }, [navigate]);
 
