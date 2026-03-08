@@ -390,7 +390,7 @@ const MasterPanel = () => {
                 <div>
                   <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" /> Allowed Endpoints</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {allEndpoints.map(ep => {
+                    {allEndpointsnts.map(ep => {
                       const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
                       return (
                         <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
@@ -412,7 +412,7 @@ const MasterPanel = () => {
                     <FileText className="w-4 h-4 text-accent" /> API Usage Reference
                   </h4>
                   <div className="space-y-1.5">
-                    {ENDPOINTS.map(ep => (
+                  allEndpointsNTS.map(ep => (
                       <div key={ep.endpoint} className="flex items-center gap-2 text-xs font-mono p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(selectedPanel.allowed_endpoints || []).includes(ep.endpoint) ? 'bg-success' : 'bg-destructive/40'}`} />
                         <span className="text-muted-foreground">{ep.label}:</span>
