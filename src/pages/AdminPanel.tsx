@@ -37,8 +37,8 @@ const AdminPanel = () => {
       supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).then(({ data }) => setBroadcasts(data || []));
     }
     if (tab === 'health') {
-      fetch('https://kbgabcennwwfmykfyndh.supabase.co/rest/v1/', {
-        headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZ2FiY2Vubnd3Zm15a2Z5bmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MTE5NjYsImV4cCI6MjA4NjE4Nzk2Nn0.CzvobFl6D2tyRPA9JNW8yEZ9PhkrtkzsAhEvyhKtj4I' }
+      fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
+        headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' }
       }).then(r => setHealthOk(r.ok)).catch(() => setHealthOk(false));
     }
   }, [tab]);
