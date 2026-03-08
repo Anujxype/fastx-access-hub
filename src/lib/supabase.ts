@@ -88,6 +88,23 @@ export const ENDPOINTS = [
 
 export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
 
+export const AVAILABLE_ICONS = [
+  'Smartphone', 'Fingerprint', 'Mail', 'FileText', 'Send', 'Building2',
+  'CreditCard', 'Wallet', 'CircleDollarSign', 'Car', 'Search', 'FileCheck',
+  'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
+];
+
+export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
+  const { data } = await supabase.from('custom_endpoints').select('*').order('created_at', { ascending: true });
+  const custom = (data || []).map((ce: CustomEndpoint) => ({
+    endpoint: ce.endpoint.startsWith('/') ? ce.endpoint : `/${ce.endpoint}`,
+    param: ce.param,
+    label: ce.label,
+    icon: ce.icon,
+  }));
+  return [...ENDPOINTS, ...custom];
+}
+
 export function generateKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = 'ak_';
