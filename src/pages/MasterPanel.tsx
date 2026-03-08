@@ -298,11 +298,15 @@ const MasterPanel = () => {
                           <p className="text-[10px] text-muted-foreground mt-0.5">/{panel.slug}</p>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
-                            {panel.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
-                          </button>
+                          {canKillSwitch && (
+                            <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
+                              {panel.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
+                            </button>
+                          )}
                           <button onClick={() => copyToClipboard(panel.master_license_key)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors"><Copy className="w-4 h-4 text-muted-foreground" /></button>
-                          <button onClick={() => deletePanel(panel.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                          {canDelete && (
+                            <button onClick={() => deletePanel(panel.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                          )}
                         </div>
                       </div>
 
