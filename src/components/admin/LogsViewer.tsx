@@ -24,11 +24,13 @@ const LogsViewer = ({ panelId }: { panelId?: string } = {}) => {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('api_logs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(1000);
+    if (panelId) query = query.eq('panel_id', panelId);
+    const { data, error } = await query;
     if (error) {
       toast({ title: 'Error', description: 'Failed to fetch logs', variant: 'destructive' });
     }

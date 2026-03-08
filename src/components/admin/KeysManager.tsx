@@ -95,6 +95,7 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
       key_value: val,
       expires_at: expiresAt || null,
       allowed_ips: allowedIps || null,
+      panel_id: panelId || null,
     });
     if (error) {
       toast({ title: 'Error', description: 'Failed to create key', variant: 'destructive' });
