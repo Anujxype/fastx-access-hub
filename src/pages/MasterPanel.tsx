@@ -435,24 +435,34 @@ const MasterPanel = () => {
             </div>
 
             <div className="glass-admin p-5">
-              <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Sent ({broadcasts.length})</h3>
+              <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Broadcast History ({broadcasts.length})</h3>
               {broadcasts.length === 0 ? (
-                <p className="text-muted-foreground text-center py-6 text-sm">No broadcasts yet</p>
+                <div className="text-center py-8">
+                  <SendIcon className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">No broadcasts sent yet</p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {broadcasts.map(b => (
-                    <div key={b.id} className="glass p-3.5 hover:border-accent/20 transition-all">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-accent text-sm">{b.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{b.message}</p>
-                          <div className="flex gap-2 mt-1.5">
-                            <span className="text-[10px] text-muted-foreground/50">{format(new Date(b.created_at), 'dd MMM yyyy HH:mm')}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground">
-                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Specific' : 'Global'}
+                    <div key={b.id} className="glass p-4 hover:border-primary/20 transition-all group">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-bold text-primary text-sm">{b.title}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border border-primary/15 bg-primary/5 text-primary/80">
+                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : 'Global'}
                             </span>
                           </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
+                          <p className="text-[10px] text-muted-foreground/40 mt-2">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
                         </div>
+                        <button
+                          onClick={() => deleteBroadcast(b.id)}
+                          className="p-2 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                          title="Delete broadcast"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
