@@ -129,7 +129,7 @@ const Portal = () => {
         </h2>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {ENDPOINTS.map((ep, i) => {
+          {allEndpoints.map((ep, i) => {
             const Icon = iconMap[ep.icon] || Search;
             const isActive = selectedEndpoint?.endpoint === ep.endpoint;
             return (
