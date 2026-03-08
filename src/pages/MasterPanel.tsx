@@ -227,8 +227,10 @@ const MasterPanel = () => {
     toast({ title: 'Copied to clipboard' });
   };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('cfms_master');
+    localStorage.removeItem('cfms_master_role');
+    signOut();
     navigate('/master-login');
   };
 
