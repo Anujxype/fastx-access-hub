@@ -58,6 +58,14 @@ const MasterPanel = () => {
   const [changingPassword, setChangingPassword] = useState<string | null>(null);
   const [newPass, setNewPass] = useState('');
 
+  // Admin management
+  const [admins, setAdmins] = useState<{ id: string; email: string; role: string; display_name: string | null }[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState<'full' | 'limited' | 'monitor'>('monitor');
+  const [newAdminName, setNewAdminName] = useState('');
+  const [addingAdmin, setAddingAdmin] = useState(false);
+
   const navigate = useNavigate();
   const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast } = useMasterAuth();
 
