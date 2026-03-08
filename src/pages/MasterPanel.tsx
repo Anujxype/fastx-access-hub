@@ -186,8 +186,7 @@ const MasterPanel = () => {
             const isActive = tab === t.id;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'text-purple-400 border border-purple-400/30' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
-                style={isActive ? { background: 'hsl(280 70% 50% / 0.12)' } : {}}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'text-primary border border-primary/30 bg-primary/10' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
               >
                 <Icon className="w-4 h-4" /> {t.label}
               </button>
