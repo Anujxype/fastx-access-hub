@@ -257,6 +257,7 @@ const MasterPanel = () => {
                             {expired && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium">EXPIRED</span>}
                           </div>
                           <p className="text-xs text-accent font-mono mt-1">{panel.master_license_key}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">/{panel.slug}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
