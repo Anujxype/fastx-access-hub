@@ -49,12 +49,17 @@ export interface Broadcast {
 export interface ManagedPanel {
   id: string;
   panel_name: string;
+  slug: string;
   master_license_key: string;
   is_active: boolean;
   expiry_date: string | null;
   allowed_endpoints: string[];
   panel_password: string;
   created_at: string;
+}
+
+export function generateSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 export const ENDPOINTS = [
