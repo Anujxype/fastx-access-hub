@@ -185,42 +185,59 @@ const MasterPanel = () => {
   const createPanel = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const licenseKey = generateLicenseKey();
-    const slug = generateSlug(newName.trim());
+    try {
+      const licenseKey = generateLicenseKey();
+      const slug = generateSlug(newName.trim());
 
-    if (!slug) {
-      toast({ title: 'Error', description: 'Invalid panel name. Use alphanumeric characters.', variant: 'destructive' });
-      setCreating(false);
-      return;
+      if (!slug) {
+        toast({ title: 'Error', description: 'Invalid panel name. Use alphanumeric characters.', variant: 'destructive' });
+        setCreating(false);
+        return;
+      }
+
+      // Check slug uniqueness
+      const { data: existing, error: checkErr } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
+      if (checkErr) {
+        console.error('Slug check error:', checkErr);
+        toast({ title: 'Error', description: 'Failed to check slug uniqueness: ' + checkErr.message, variant: 'destructive' });
+        setCreating(false);
+        return;
+      }
+      if (existing) {
+        toast({ title: 'Error', description: `A panel with URL "/${slug}" already exists. Use a different name.`, variant: 'destructive' });
+        setCreating(false);
+        return;
+      }
+
+      // Fetch latest endpoints for default assignment
+      const latestEndpoints = await fetchAllEndpoints();
+      const allPaths = latestEndpoints.map(e => e.endpoint);
+
+      const insertData = {
+        panel_name: newName.trim(),
+        slug,
+        master_license_key: licenseKey,
+        panel_password: newPassword || 'admin123',
+        expiry_date: newExpiry || null,
+        allowed_endpoints: allPaths,
+        is_active: true,
+      };
+      console.log('Creating panel:', insertData);
+
+      const { data: created, error } = await supabase.from('managed_panels').insert(insertData).select();
+      if (error) {
+        console.error('Panel creation error:', error);
+        toast({ title: 'Error creating panel', description: error.message, variant: 'destructive' });
+      } else {
+        console.log('Panel created successfully:', created);
+        toast({ title: 'Panel Created', description: `URL: /${slug} | License: ${licenseKey}` });
+        setNewName(''); setNewPassword('admin123'); setNewExpiry(''); setShowCreate(false);
+      }
+      await fetchPanels();
+    } catch (err: any) {
+      console.error('Unexpected error creating panel:', err);
+      toast({ title: 'Unexpected Error', description: err?.message || 'Failed to create panel', variant: 'destructive' });
     }
-
-    // Check slug uniqueness
-    const { data: existing } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
-    if (existing) {
-      toast({ title: 'Error', description: `A panel with URL "/${slug}" already exists. Use a different name.`, variant: 'destructive' });
-      setCreating(false);
-      return;
-    }
-
-    // Fetch latest endpoints for default assignment
-    const latestEndpoints = await fetchAllEndpoints();
-    const allPaths = latestEndpoints.map(e => e.endpoint);
-
-    const { error } = await supabase.from('managed_panels').insert({
-      panel_name: newName.trim(),
-      slug,
-      master_license_key: licenseKey,
-      panel_password: newPassword || 'admin123',
-      expiry_date: newExpiry || null,
-      allowed_endpoints: allPaths,
-    });
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Panel Created', description: `URL: /${slug} | License: ${licenseKey}` });
-      setNewName(''); setNewPassword('admin123'); setNewExpiry(''); setShowCreate(false);
-    }
-    await fetchPanels();
     setCreating(false);
   };
 
