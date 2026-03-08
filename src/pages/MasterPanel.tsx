@@ -67,7 +67,7 @@ const MasterPanel = () => {
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   const navigate = useNavigate();
-  const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast } = useMasterAuth();
+  const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast, canManageAdmins } = useMasterAuth();
 
   useEffect(() => {
     if (!authLoading && (!user || !masterAdmin)) {
