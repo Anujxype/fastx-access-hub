@@ -158,18 +158,18 @@ const MasterPanel = () => {
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
-      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0" style={{ borderColor: 'hsl(280 60% 50% / 0.15)' }}>
+      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0">
         <div className="flex items-center gap-3">
-          <CFMSLogo size={36} className="ring-2 ring-purple-400/20" />
+          <CFMSLogo size={36} className="ring-2 ring-primary/20" />
           <div>
             <span className="font-bold text-lg leading-none">CFMS</span>
-            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle" style={{ background: 'hsl(280 70% 50% / 0.15)', color: 'hsl(280 70% 60%)', border: '1px solid hsl(280 70% 50% / 0.25)' }}>MASTER</span>
+            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle bg-primary/15 text-primary border border-primary/25">MASTER</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="hidden sm:flex items-center gap-1.5 mr-2">
-            <Crown className="w-3.5 h-3.5" style={{ color: 'hsl(280 70% 60%)' }} />
-            <span className="text-[10px] font-medium" style={{ color: 'hsl(280 70% 60%)' }}>SUPREME</span>
+            <Crown className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-medium text-primary">SUPREME</span>
           </span>
           <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all">
             <LogOut className="w-4 h-4" />
