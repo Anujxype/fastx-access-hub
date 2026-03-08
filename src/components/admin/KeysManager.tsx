@@ -23,8 +23,6 @@ const KeysManager = () => {
     setKeys((data || []).filter(k => k.key_value));
     setLoading(false);
   };
-    setLoading(false);
-  };
 
   useEffect(() => { fetchKeys(); }, []);
 
