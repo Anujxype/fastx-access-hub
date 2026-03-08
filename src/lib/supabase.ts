@@ -8,7 +8,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
 
 export const ADMIN_PASSWORD = 'stk7890';
-export const MASTER_PASSWORD = 'stk7890';
+export const MASTER_PASSWORD = 'cfms7890';
 
 // Matches actual DB column names
 export interface ApiKey {

@@ -24,7 +24,7 @@ const MasterLogin = () => {
 
   const handlePasswordLogin = () => {
     const normalizedPassword = password.trim();
-    const validMasterPasswords = [MASTER_PASSWORD.trim(), ADMIN_PASSWORD.trim(), 'stk7890'];
+    const validMasterPasswords = [MASTER_PASSWORD.trim(), 'cfms7890'];
 
     setPassLoading(true);
     setPassError('');
