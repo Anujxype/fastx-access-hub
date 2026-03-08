@@ -99,9 +99,11 @@ const MasterPanel = () => {
   };
 
   const togglePanel = async (panel: ManagedPanel) => {
-    await supabase.from('managed_panels').update({ is_active: !panel.is_active }).eq('id', panel.id);
-    setPanels(panels.map(p => p.id === panel.id ? { ...p, is_active: !panel.is_active } : p));
-    toast({ title: !panel.is_active ? 'Panel Enabled' : 'Panel Disabled', description: panel.panel_name });
+    const updated = { ...panel, is_active: !panel.is_active };
+    await supabase.from('managed_panels').update({ is_active: updated.is_active }).eq('id', panel.id);
+    setPanels(panels.map(p => p.id === panel.id ? updated : p));
+    if (selectedPanel?.id === panel.id) setSelectedPanel(updated);
+    toast({ title: updated.is_active ? 'Panel Enabled' : 'Panel Disabled', description: panel.panel_name });
   };
 
   const deletePanel = async (id: string) => {
