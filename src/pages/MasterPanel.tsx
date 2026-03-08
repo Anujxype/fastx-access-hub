@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, fetchAllEndpoints, generateLicenseKey, generateSlug } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
@@ -68,38 +68,72 @@ const MasterPanel = () => {
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   const navigate = useNavigate();
-  const { user, masterAdmin, role, isPasswordAuth, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast, canManageAdmins } = useMasterAuth();
+  const {
+    user, masterAdmin, role, isPasswordAuth, loading: authLoading,
+    signOut, canManage, canDelete, canChangePasswords, canKillSwitch,
+    canSendBroadcast, canManageAdmins
+  } = useMasterAuth();
 
+  const isAuthenticated = !authLoading && (!!masterAdmin || isPasswordAuth);
+
+  // Auth guard
   useEffect(() => {
     if (!authLoading && !masterAdmin && !isPasswordAuth) {
       navigate('/master-login');
     }
   }, [authLoading, masterAdmin, isPasswordAuth, navigate]);
 
-  const fetchPanels = async () => {
+  // Fetch panels - only when authenticated
+  const fetchPanels = useCallback(async () => {
+    if (!isAuthenticated) return;
     setLoading(true);
-    const { data } = await supabase.from('managed_panels').select('*').order('created_at', { ascending: false });
-    setPanels(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchPanels(); fetchAllEndpoints().then(setAllEndpoints); }, []);
-
-  useEffect(() => {
-    if (tab === 'broadcasts') {
-      supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50).then(({ data }) => setBroadcasts(data || []));
+    try {
+      const { data, error } = await supabase.from('managed_panels').select('*').order('created_at', { ascending: false });
+      if (error) {
+        toast({ title: 'Error loading panels', description: error.message, variant: 'destructive' });
+      }
+      setPanels(data || []);
+    } catch (err) {
+      toast({ title: 'Network error', description: 'Failed to load panels', variant: 'destructive' });
     }
-    if (tab === 'panels' || tab === 'endpoints') {
+    setLoading(false);
+  }, [isAuthenticated]);
+
+  // Initial data load - only after auth is confirmed
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchPanels();
+    fetchAllEndpoints().then(setAllEndpoints);
+  }, [isAuthenticated, fetchPanels]);
+
+  // Tab-specific data loading
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (tab === 'broadcasts') {
+      supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50)
+        .then(({ data }) => setBroadcasts(data || []));
+    }
+    if (tab === 'endpoints') {
       fetchAllEndpoints().then(setAllEndpoints);
     }
     if (tab === 'admins') {
       fetchAdmins();
     }
-  }, [tab, selectedPanel]);
+  }, [tab, isAuthenticated]);
+
+  // Refresh endpoints when returning to panels tab with a selected panel
+  useEffect(() => {
+    if (tab === 'panels' && selectedPanel) {
+      fetchAllEndpoints().then(setAllEndpoints);
+    }
+  }, [tab, selectedPanel?.id]);
 
   const fetchAdmins = async () => {
     setAdminsLoading(true);
-    const { data } = await supabase.from('master_admins').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('master_admins').select('*').order('created_at', { ascending: false });
+    if (error) {
+      toast({ title: 'Error loading admins', description: error.message, variant: 'destructive' });
+    }
     setAdmins(data || []);
     setAdminsLoading(false);
   };
@@ -123,18 +157,27 @@ const MasterPanel = () => {
   };
 
   const removeAdmin = async (id: string, email: string) => {
-    if (email === user?.email) {
+    // Prevent removing yourself - check both Google auth and password auth
+    if (email === user?.email || (isPasswordAuth && !user)) {
       toast({ title: 'Error', description: 'You cannot remove yourself', variant: 'destructive' });
       return;
     }
     if (!confirm(`Remove ${email} from master admins?`)) return;
-    await supabase.from('master_admins').delete().eq('id', id);
+    const { error } = await supabase.from('master_admins').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
     await fetchAdmins();
     toast({ title: 'Admin Removed', description: email });
   };
 
   const updateAdminRole = async (id: string, newRole: string) => {
-    await supabase.from('master_admins').update({ role: newRole }).eq('id', id);
+    const { error } = await supabase.from('master_admins').update({ role: newRole }).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
     await fetchAdmins();
     toast({ title: 'Role Updated' });
   };
@@ -144,6 +187,13 @@ const MasterPanel = () => {
     setCreating(true);
     const licenseKey = generateLicenseKey();
     const slug = generateSlug(newName.trim());
+
+    if (!slug) {
+      toast({ title: 'Error', description: 'Invalid panel name. Use alphanumeric characters.', variant: 'destructive' });
+      setCreating(false);
+      return;
+    }
+
     // Check slug uniqueness
     const { data: existing } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
     if (existing) {
@@ -151,13 +201,18 @@ const MasterPanel = () => {
       setCreating(false);
       return;
     }
+
+    // Fetch latest endpoints for default assignment
+    const latestEndpoints = await fetchAllEndpoints();
+    const allPaths = latestEndpoints.map(e => e.endpoint);
+
     const { error } = await supabase.from('managed_panels').insert({
       panel_name: newName.trim(),
       slug,
       master_license_key: licenseKey,
       panel_password: newPassword || 'admin123',
       expiry_date: newExpiry || null,
-      allowed_endpoints: ALL_ENDPOINT_PATHS,
+      allowed_endpoints: allPaths,
     });
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -170,25 +225,40 @@ const MasterPanel = () => {
   };
 
   const togglePanel = async (panel: ManagedPanel) => {
-    const updated = { ...panel, is_active: !panel.is_active };
-    await supabase.from('managed_panels').update({ is_active: updated.is_active }).eq('id', panel.id);
-    setPanels(panels.map(p => p.id === panel.id ? updated : p));
+    const newActive = !panel.is_active;
+    const { error } = await supabase.from('managed_panels').update({ is_active: newActive }).eq('id', panel.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const updated = { ...panel, is_active: newActive };
+    setPanels(prev => prev.map(p => p.id === panel.id ? updated : p));
     if (selectedPanel?.id === panel.id) setSelectedPanel(updated);
-    toast({ title: updated.is_active ? 'Panel Enabled' : 'Panel Disabled', description: panel.panel_name });
+    toast({ title: newActive ? 'Panel Enabled' : 'Panel Disabled', description: panel.panel_name });
   };
 
   const deletePanel = async (id: string) => {
     if (!confirm('Delete this panel permanently? All associated keys and logs will be unlinked.')) return;
-    await supabase.from('managed_panels').delete().eq('id', id);
-    setPanels(panels.filter(p => p.id !== id));
+    const { error } = await supabase.from('managed_panels').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setPanels(prev => prev.filter(p => p.id !== id));
     if (selectedPanel?.id === id) setSelectedPanel(null);
     toast({ title: 'Panel Deleted' });
   };
 
   const changePassword = async (panelId: string) => {
     if (!newPass.trim()) return;
-    await supabase.from('managed_panels').update({ panel_password: newPass.trim() }).eq('id', panelId);
-    setPanels(panels.map(p => p.id === panelId ? { ...p, panel_password: newPass.trim() } : p));
+    const { error } = await supabase.from('managed_panels').update({ panel_password: newPass.trim() }).eq('id', panelId);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const updatedPanels = panels.map(p => p.id === panelId ? { ...p, panel_password: newPass.trim() } : p);
+    setPanels(updatedPanels);
+    if (selectedPanel?.id === panelId) setSelectedPanel({ ...selectedPanel, panel_password: newPass.trim() });
     setChangingPassword(null); setNewPass('');
     toast({ title: 'Password Updated' });
   };
@@ -196,19 +266,29 @@ const MasterPanel = () => {
   const toggleEndpoint = async (panel: ManagedPanel, endpoint: string) => {
     const current = panel.allowed_endpoints || [];
     const updated = current.includes(endpoint) ? current.filter(e => e !== endpoint) : [...current, endpoint];
-    await supabase.from('managed_panels').update({ allowed_endpoints: updated }).eq('id', panel.id);
-    setPanels(panels.map(p => p.id === panel.id ? { ...p, allowed_endpoints: updated } : p));
-    if (selectedPanel?.id === panel.id) setSelectedPanel({ ...panel, allowed_endpoints: updated });
+    const { error } = await supabase.from('managed_panels').update({ allowed_endpoints: updated }).eq('id', panel.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const updatedPanel = { ...panel, allowed_endpoints: updated };
+    setPanels(prev => prev.map(p => p.id === panel.id ? updatedPanel : p));
+    if (selectedPanel?.id === panel.id) setSelectedPanel(updatedPanel);
   };
 
   const sendBroadcast = async () => {
     if (!bcTitle.trim() || !bcMessage.trim()) return;
     setBcSending(true);
-    await supabase.from('broadcasts').insert({
+    const { error } = await supabase.from('broadcasts').insert({
       title: bcTitle.trim(),
       message: bcMessage.trim(),
       target_panel_id: bcTarget === 'all' ? null : bcTarget,
     });
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      setBcSending(false);
+      return;
+    }
     setBcTitle(''); setBcMessage(''); setBcTarget('all');
     const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50);
     setBroadcasts(data || []);
@@ -217,8 +297,12 @@ const MasterPanel = () => {
   };
 
   const deleteBroadcast = async (id: string) => {
-    await supabase.from('broadcasts').delete().eq('id', id);
-    setBroadcasts(broadcasts.filter(b => b.id !== id));
+    const { error } = await supabase.from('broadcasts').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setBroadcasts(prev => prev.filter(b => b.id !== id));
     toast({ title: 'Broadcast Deleted' });
   };
 
@@ -227,10 +311,10 @@ const MasterPanel = () => {
     toast({ title: 'Copied to clipboard' });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem('cfms_master');
     localStorage.removeItem('cfms_master_role');
-    signOut();
+    await signOut();
     navigate('/master-login');
   };
 
@@ -241,6 +325,8 @@ const MasterPanel = () => {
       </div>
     );
   }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen pb-8">
@@ -254,7 +340,6 @@ const MasterPanel = () => {
           </div>
         </div>
         <div className="flex items-center gap-1.5 relative">
-          {/* Profile Button */}
           <button onClick={() => setShowProfile(!showProfile)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/50 transition-all">
             {user?.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} className="w-7 h-7 rounded-full ring-2 ring-primary/25" alt="" />
@@ -266,7 +351,6 @@ const MasterPanel = () => {
             <span className="hidden sm:inline text-[11px] font-medium text-muted-foreground max-w-[120px] truncate">{masterAdmin?.display_name || user?.email || (isPasswordAuth ? 'Admin' : '')}</span>
           </button>
 
-          {/* Profile Popup */}
           {showProfile && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
@@ -285,9 +369,7 @@ const MasterPanel = () => {
                       <p className="text-[11px] text-muted-foreground truncate">{user?.email || (isPasswordAuth ? 'Local authentication' : '')}</p>
                     </div>
                   </div>
-
                   <div className="h-px bg-border" />
-
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Role</span>
@@ -302,9 +384,7 @@ const MasterPanel = () => {
                       <span className="text-foreground font-medium">{panels.length}</span>
                     </div>
                   </div>
-
                   <div className="h-px bg-border" />
-
                   <button
                     onClick={() => { setShowProfile(false); handleLogout(); }}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all"
@@ -322,9 +402,11 @@ const MasterPanel = () => {
       {/* Tabs */}
       <div className="px-4 sm:px-6 mt-5 mb-6">
         <div className="flex gap-1.5 overflow-x-auto pb-2">
-          {TABS.map((t, i) => {
+          {TABS.map(t => {
             const Icon = t.icon;
             const isActive = tab === t.id;
+            // Hide admin-only tabs from monitor role
+            if (t.id === 'admins' && role === 'monitor') return null;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'text-primary border border-primary/30 bg-primary/10' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
@@ -348,15 +430,15 @@ const MasterPanel = () => {
               <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p></div>
             </div>
 
-            {/* Create Button - Full access only */}
-            {canDelete && (
+            {/* Create Button - canManage (full + limited) */}
+            {canManage && (
               <button onClick={() => setShowCreate(!showCreate)} className="btn-primary flex items-center gap-2 text-sm px-5 py-2.5">
                 <Plus className="w-4 h-4" /> {showCreate ? 'Cancel' : 'Create New Panel'}
               </button>
             )}
 
             {/* Create Form */}
-            {showCreate && (
+            {showCreate && canManage && (
               <div className="glass-admin p-5 space-y-4 animate-in">
                 <h3 className="font-bold text-sm flex items-center gap-2"><Plus className="w-4 h-4 text-accent" /> New Panel</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -418,7 +500,7 @@ const MasterPanel = () => {
 
                       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                         <span>Created: {format(new Date(panel.created_at), 'dd/MM/yyyy')}</span>
-                        <span>Endpoints: {(panel.allowed_endpoints || []).length}/{ALL_ENDPOINT_PATHS.length}</span>
+                        <span>Endpoints: {(panel.allowed_endpoints || []).length}/{allEndpoints.length}</span>
                         {panel.expiry_date && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{format(new Date(panel.expiry_date), 'dd/MM/yyyy')}</span>}
                       </div>
 
@@ -427,7 +509,7 @@ const MasterPanel = () => {
                         <div className="flex gap-2 animate-in">
                           <input value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="New password" className="input-admin flex-1 text-sm" type="password" />
                           <button onClick={() => changePassword(panel.id)} className="btn-admin text-xs px-3 py-1.5">Save</button>
-                          <button onClick={() => setChangingPassword(null)} className="text-xs text-muted-foreground px-2">Cancel</button>
+                          <button onClick={() => { setChangingPassword(null); setNewPass(''); }} className="text-xs text-muted-foreground px-2">Cancel</button>
                         </div>
                       ) : null}
 
@@ -437,11 +519,11 @@ const MasterPanel = () => {
                           <ChevronRight className="w-3 h-3" />
                         </button>
                         {canChangePasswords && (
-                          <button onClick={() => setChangingPassword(changingPassword === panel.id ? null : panel.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
+                          <button onClick={() => { setChangingPassword(changingPassword === panel.id ? null : panel.id); setNewPass(''); }} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                             <Lock className="w-3.5 h-3.5" /> Password
                           </button>
                         )}
-                        <button onClick={() => copyToClipboard(`${window.location.origin}/${panel.slug || panel.id}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
+                        <button onClick={() => copyToClipboard(`${window.location.origin}/${panel.slug}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                           <Globe className="w-3.5 h-3.5" /> Copy URL
                         </button>
                       </div>
@@ -516,7 +598,6 @@ const MasterPanel = () => {
                   </div>
                 </div>
 
-                {/* Change password inline - Full access only */}
                 {canChangePasswords && (
                   <div className="glass-admin p-4">
                     <h4 className="text-sm font-bold mb-3 flex items-center gap-2"><Lock className="w-4 h-4 text-accent" /> Change Panel Password</h4>
@@ -537,8 +618,9 @@ const MasterPanel = () => {
                     {allEndpoints.map(ep => {
                       const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
                       return (
-                        <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
-                          className={`flex items-center gap-2 p-3 rounded-lg text-xs font-medium transition-all text-left ${enabled ? 'bg-success/10 text-success border border-success/20' : 'bg-secondary/30 text-muted-foreground border border-transparent hover:border-border/50'}`}>
+                        <button key={ep.endpoint} onClick={() => canManage ? toggleEndpoint(selectedPanel, ep.endpoint) : null}
+                          disabled={!canManage}
+                          className={`flex items-center gap-2 p-3 rounded-lg text-xs font-medium transition-all text-left ${enabled ? 'bg-success/10 text-success border border-success/20' : 'bg-secondary/30 text-muted-foreground border border-transparent hover:border-border/50'} ${!canManage ? 'cursor-not-allowed opacity-70' : ''}`}>
                           {enabled ? <CheckSquare className="w-4 h-4 flex-shrink-0" /> : <Square className="w-4 h-4 flex-shrink-0" />}
                           <div>
                             <p className="font-mono">{ep.endpoint}</p>
@@ -550,13 +632,12 @@ const MasterPanel = () => {
                   </div>
                 </div>
 
-                {/* Endpoint Usage Reference */}
                 <div className="glass p-4">
                   <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-accent" /> API Usage Reference
                   </h4>
                   <div className="space-y-1.5">
-                  {allEndpoints.map(ep => (
+                    {allEndpoints.map(ep => (
                       <div key={ep.endpoint} className="flex items-center gap-2 text-xs font-mono p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(selectedPanel.allowed_endpoints || []).includes(ep.endpoint) ? 'bg-success' : 'bg-destructive/40'}`} />
                         <span className="text-muted-foreground">{ep.label}:</span>
@@ -634,13 +715,15 @@ const MasterPanel = () => {
                           <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
                           <p className="text-[10px] text-muted-foreground/40 mt-2">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
                         </div>
-                        <button
-                          onClick={() => deleteBroadcast(b.id)}
-                          className="p-2 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
-                          title="Delete broadcast"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => deleteBroadcast(b.id)}
+                            className="p-2 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                            title="Delete broadcast"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -655,6 +738,9 @@ const MasterPanel = () => {
 
         {/* ===== LOGS TAB ===== */}
         {tab === 'logs' && <LogsViewer />}
+
+        {/* ===== ANALYTICS TAB ===== */}
+        {tab === 'analytics' && <AnalyticsDashboard />}
 
         {/* ===== ADMINS TAB ===== */}
         {tab === 'admins' && (
