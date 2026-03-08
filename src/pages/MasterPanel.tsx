@@ -69,7 +69,11 @@ const MasterPanel = () => {
     if (tab === 'broadcasts') {
       supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50).then(({ data }) => setBroadcasts(data || []));
     }
-  }, [tab]);
+    // Refresh endpoints when switching tabs or selecting panel details
+    if (tab === 'panels' || tab === 'endpoints') {
+      fetchAllEndpoints().then(setAllEndpoints);
+    }
+  }, [tab, selectedPanel]);
 
   const createPanel = async () => {
     if (!newName.trim()) return;
