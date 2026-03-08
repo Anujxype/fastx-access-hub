@@ -140,10 +140,10 @@ const MasterLogin = () => {
                   </div>
                 )}
 
-                <button onClick={handlePasswordLogin} disabled={passLoading} className="w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-all">
-                  {passLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
-                  {passLoading ? 'Authenticating...' : 'Login with Password'}
-                  {!passLoading && <ArrowRight className="w-4 h-4 ml-1" />}
+                <button onClick={handlePasswordLogin} className="w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-all">
+                  <Lock className="w-5 h-5" />
+                  Login with Password
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </button>
               </div>
             </div>
