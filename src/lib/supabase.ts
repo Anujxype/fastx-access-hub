@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://rwmbuxgyynlyusmyaovg.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MjA4MDAsImV4cCI6MjA1NzE5NjgwMH0.placeholder';
+const supabaseUrl = 'https://kbgabcennwwfmykfyndh.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZ2FiY2Vubnd3Zm15a2Z5bmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MTE5NjYsImV4cCI6MjA4NjE4Nzk2Nn0.CzvobFl6D2tyRPA9JNW8yEZ9PhkrtkzsAhEvyhKtj4I';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -9,14 +9,15 @@ export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
 
 export const ADMIN_PASSWORD = 'stk7890';
 
+// Matches actual DB column names
 export interface ApiKey {
   id: string;
   name: string;
-  key_value: string;
-  is_active: boolean;
+  key: string;
+  enabled: boolean;
   uses: number;
-  expires_at: string | null;
-  allowed_ips: string | null;
+  expires_at?: string | null;
+  allowed_ips?: string | null;
   created_at: string;
 }
 
