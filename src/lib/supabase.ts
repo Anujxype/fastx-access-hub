@@ -58,6 +58,15 @@ export interface ManagedPanel {
   created_at: string;
 }
 
+export interface CustomEndpoint {
+  id: string;
+  endpoint: string;
+  param: string;
+  label: string;
+  icon: string;
+  created_at: string;
+}
+
 export function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
