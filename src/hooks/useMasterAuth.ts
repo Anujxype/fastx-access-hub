@@ -92,16 +92,26 @@ export function useMasterAuth() {
     setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
   };
 
+  const storedRole = typeof window !== 'undefined' ? localStorage.getItem('cfms_master_role') : null;
+  const isPasswordAuth = typeof window !== 'undefined' && localStorage.getItem('cfms_master') === 'true' && !!storedRole;
+  const effectiveRole: MasterRole | null = state.role ?? (
+    storedRole === 'full' || storedRole === 'limited' || storedRole === 'monitor'
+      ? (storedRole as MasterRole)
+      : null
+  );
+
   // Permission helpers
-  const canManage = state.role === 'full' || state.role === 'limited';
-  const canDelete = state.role === 'full';
-  const canChangePasswords = state.role === 'full';
-  const canKillSwitch = state.role === 'full';
-  const canManageAdmins = state.role === 'full';
-  const canSendBroadcast = state.role === 'full' || state.role === 'limited';
+  const canManage = effectiveRole === 'full' || effectiveRole === 'limited';
+  const canDelete = effectiveRole === 'full';
+  const canChangePasswords = effectiveRole === 'full';
+  const canKillSwitch = effectiveRole === 'full';
+  const canManageAdmins = effectiveRole === 'full';
+  const canSendBroadcast = effectiveRole === 'full' || effectiveRole === 'limited';
 
   return {
     ...state,
+    role: effectiveRole,
+    isPasswordAuth,
     signInWithGoogle,
     signOut,
     canManage,

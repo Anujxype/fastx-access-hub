@@ -67,13 +67,13 @@ const MasterPanel = () => {
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   const navigate = useNavigate();
-  const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast, canManageAdmins } = useMasterAuth();
+  const { user, masterAdmin, role, isPasswordAuth, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast, canManageAdmins } = useMasterAuth();
 
   useEffect(() => {
-    if (!authLoading && (!user || !masterAdmin)) {
+    if (!authLoading && !masterAdmin && !isPasswordAuth) {
       navigate('/master-login');
     }
-  }, [authLoading, user, masterAdmin, navigate]);
+  }, [authLoading, masterAdmin, isPasswordAuth, navigate]);
 
   const fetchPanels = async () => {
     setLoading(true);
@@ -257,7 +257,7 @@ const MasterPanel = () => {
             ) : (
               <UserCircle className="w-5 h-5 text-muted-foreground" />
             )}
-            <span className="text-[11px] font-medium text-muted-foreground max-w-[150px] truncate">{masterAdmin?.display_name || user?.email}</span>
+            <span className="text-[11px] font-medium text-muted-foreground max-w-[150px] truncate">{masterAdmin?.display_name || user?.email || (isPasswordAuth ? 'Password Admin' : '')}</span>
           </span>
           <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all">
             <LogOut className="w-4 h-4" />
