@@ -370,45 +370,69 @@ const MasterPanel = () => {
 
           {showProfile && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
-              <div className="absolute right-0 top-full mt-2 w-72 z-50 animate-scale-in origin-top-right">
-                <div className="glass-admin rounded-xl p-5 space-y-4 shadow-2xl border border-primary/15">
-                  <div className="flex items-center gap-3">
-                    {user?.user_metadata?.avatar_url ? (
-                      <img src={user.user_metadata.avatar_url} className="w-12 h-12 rounded-full ring-2 ring-primary/30" alt="" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary/30">
-                        <span className="text-lg font-bold text-primary">{(masterAdmin?.display_name || user?.email || 'A')[0].toUpperCase()}</span>
+              <div className="fixed inset-0 z-40 bg-background/20 backdrop-blur-sm" onClick={() => setShowProfile(false)} />
+              <div className="absolute right-0 top-full mt-3 w-80 z-50 animate-in origin-top-right">
+                <div className="rounded-2xl overflow-hidden shadow-[0_24px_80px_-12px_hsl(265_72%_58%/0.25)] border border-[hsl(265_30%_22%/0.3)]">
+                  {/* Profile header with gradient */}
+                  <div className="relative px-6 pt-6 pb-5 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[hsl(265_72%_58%/0.15)] via-[hsl(265_50%_40%/0.08)] to-transparent" />
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[hsl(265_72%_58%/0.08)] blur-3xl" />
+                    <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-[hsl(38_92%_50%/0.06)] blur-2xl" />
+                    <div className="relative flex items-center gap-4">
+                      {user?.user_metadata?.avatar_url ? (
+                        <div className="relative">
+                          <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[hsl(265_72%_58%/0.5)] to-[hsl(265_60%_45%/0.3)] blur-sm" />
+                          <img src={user.user_metadata.avatar_url} className="relative w-14 h-14 rounded-full ring-2 ring-[hsl(265_72%_58%/0.4)] ring-offset-2 ring-offset-background" alt="" />
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[hsl(265_72%_58%/0.5)] to-[hsl(265_60%_45%/0.3)] blur-sm" />
+                          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-[hsl(265_72%_58%/0.3)] to-[hsl(265_50%_40%/0.2)] flex items-center justify-center ring-2 ring-[hsl(265_72%_58%/0.4)] ring-offset-2 ring-offset-background">
+                            <span className="text-xl font-bold text-primary">{(masterAdmin?.display_name || user?.email || 'A')[0].toUpperCase()}</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[15px] truncate">{masterAdmin?.display_name || (isPasswordAuth ? 'Password Admin' : 'Admin')}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email || (isPasswordAuth ? 'Local authentication' : '')}</p>
+                        {role && (
+                          <span className={`inline-flex items-center mt-2 text-[10px] px-2.5 py-1 rounded-full font-semibold tracking-wider border ${ROLE_BADGE[role].color}`}>
+                            <Crown className="w-3 h-3 mr-1.5" />
+                            {ROLE_BADGE[role].label}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm truncate">{masterAdmin?.display_name || (isPasswordAuth ? 'Password Admin' : 'Admin')}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{user?.email || (isPasswordAuth ? 'Local authentication' : '')}</p>
                     </div>
                   </div>
-                  <div className="h-px bg-border" />
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Role</span>
-                      {role && <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Auth Method</span>
-                      <span className="text-foreground font-medium">{isPasswordAuth && !user ? 'Password' : 'Google OAuth'}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Panels</span>
-                      <span className="text-foreground font-medium">{panels.length}</span>
+
+                  {/* Stats row */}
+                  <div className="glass-master px-6 py-4 rounded-none border-x-0">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="text-center">
+                        <p className="text-lg font-extrabold text-primary">{panels.length}</p>
+                        <p className="text-[10px] text-muted-foreground tracking-wider font-medium">PANELS</p>
+                      </div>
+                      <div className="text-center border-x border-[hsl(265_30%_22%/0.2)]">
+                        <p className="text-lg font-extrabold text-success">{panels.filter(p => p.is_active).length}</p>
+                        <p className="text-[10px] text-muted-foreground tracking-wider font-medium">ACTIVE</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-extrabold text-accent">{isPasswordAuth && !user ? 'PWD' : 'OAuth'}</p>
+                        <p className="text-[10px] text-muted-foreground tracking-wider font-medium">AUTH</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="h-px bg-border" />
-                  <button
-                    onClick={() => { setShowProfile(false); handleLogout(); }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+
+                  {/* Logout */}
+                  <div className="glass-strong rounded-none border-x-0 border-b-0 px-6 py-4">
+                    <button
+                      onClick={() => { setShowProfile(false); handleLogout(); }}
+                      className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold text-destructive bg-destructive/8 hover:bg-destructive/15 border border-destructive/15 hover:border-destructive/30 transition-all duration-300 hover:shadow-[0_0_20px_-4px_hsl(0_72%_51%/0.2)]"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               </div>
             </>
