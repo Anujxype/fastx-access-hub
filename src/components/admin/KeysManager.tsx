@@ -126,7 +126,7 @@ const KeysManager = () => {
                   <div>
                     <p className="font-bold">{k.name}</p>
                     <p className="text-sm text-accent font-mono">
-                      {showKey[k.id] ? k.key_value : k.key_value.substring(0, 8) + '•••••'}
+                      {showKey[k.id] ? (k.key_value || '') : ((k.key_value || '').substring(0, 8) + '•••••')}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
