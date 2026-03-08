@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase, API_BASE, ENDPOINTS, getDeviceInfo, type ManagedPanel } from '@/lib/supabase';
+import { supabase, API_BASE, ENDPOINTS, getDeviceInfo, getGeoInfo, type ManagedPanel } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import AlertBanner from '@/components/AlertBanner';
 import {
