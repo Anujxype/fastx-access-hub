@@ -60,9 +60,9 @@ const Portal = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('fastx_key');
-    localStorage.removeItem('fastx_key_name');
-    localStorage.removeItem('fastx_key_id');
+    localStorage.removeItem('cfms_key');
+    localStorage.removeItem('cfms_key_name');
+    localStorage.removeItem('cfms_key_id');
     navigate('/');
   };
 

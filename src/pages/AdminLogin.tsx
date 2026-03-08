@@ -15,7 +15,7 @@ const AdminLogin = () => {
     setError('');
     setTimeout(() => {
       if (password === ADMIN_PASSWORD) {
-        localStorage.setItem('fastx_admin', 'true');
+        localStorage.setItem('cfms_admin', 'true');
         navigate('/admin');
       } else {
         setError('Invalid admin password');
