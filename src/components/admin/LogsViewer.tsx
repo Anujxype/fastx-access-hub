@@ -12,7 +12,7 @@ type StatusFilter = 'all' | 'success' | 'error';
 
 const PAGE_SIZE = 25;
 
-const LogsViewer = () => {
+const LogsViewer = ({ panelId }: { panelId?: string } = {}) => {
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
