@@ -6,6 +6,7 @@ import LogsViewer from '@/components/admin/LogsViewer';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import KeysManager from '@/components/admin/KeysManager';
 import CustomEndpointManager from '@/components/admin/CustomEndpointManager';
+import { useMasterAuth, type MasterRole } from '@/hooks/useMasterAuth';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -13,7 +14,7 @@ import {
   Settings, Send as SendIcon, BarChart3, FileText, Key,
   Loader2, RefreshCw, Copy, Eye, EyeOff, Lock,
   ArrowLeft, Shield, Activity, Globe, Clock, Users,
-  CheckSquare, Square, ChevronRight
+  CheckSquare, Square, ChevronRight, Pencil, UserCircle
 } from 'lucide-react';
 
 const TABS = [
@@ -23,6 +24,12 @@ const TABS = [
   { id: 'logs', label: 'All Logs', icon: FileText },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
+
+const ROLE_BADGE: Record<MasterRole, { label: string; color: string }> = {
+  full: { label: 'FULL ACCESS', color: 'bg-primary/15 text-primary border-primary/25' },
+  limited: { label: 'LIMITED', color: 'bg-accent/15 text-accent border-accent/25' },
+  monitor: { label: 'MONITOR', color: 'bg-success/15 text-success border-success/25' },
+};
 
 const MasterPanel = () => {
   const [tab, setTab] = useState('panels');
@@ -51,10 +58,13 @@ const MasterPanel = () => {
   const [newPass, setNewPass] = useState('');
 
   const navigate = useNavigate();
+  const { user, masterAdmin, role, loading: authLoading, signOut, canManage, canDelete, canChangePasswords, canKillSwitch, canSendBroadcast } = useMasterAuth();
 
   useEffect(() => {
-    if (!localStorage.getItem('cfms_master')) navigate('/master-login');
-  }, [navigate]);
+    if (!authLoading && (!user || !masterAdmin)) {
+      navigate('/master-login');
+    }
+  }, [authLoading, user, masterAdmin, navigate]);
 
   const fetchPanels = async () => {
     setLoading(true);
@@ -163,10 +173,18 @@ const MasterPanel = () => {
     toast({ title: 'Copied to clipboard' });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('cfms_master');
+  const handleLogout = async () => {
+    await signOut();
     navigate('/master-login');
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8">
@@ -176,13 +194,17 @@ const MasterPanel = () => {
           <CFMSLogo size={36} className="ring-2 ring-primary/20" />
           <div>
             <span className="font-bold text-lg leading-none">CFMS</span>
-            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle bg-primary/15 text-primary border border-primary/25">MASTER</span>
+            {role && <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="hidden sm:flex items-center gap-1.5 mr-2">
-            <Crown className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[10px] font-medium text-primary">SUPREME</span>
+          <span className="hidden sm:flex items-center gap-2 mr-3">
+            {user?.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} className="w-6 h-6 rounded-full ring-1 ring-primary/20" alt="" />
+            ) : (
+              <UserCircle className="w-5 h-5 text-muted-foreground" />
+            )}
+            <span className="text-[11px] font-medium text-muted-foreground max-w-[150px] truncate">{masterAdmin?.display_name || user?.email}</span>
           </span>
           <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all">
             <LogOut className="w-4 h-4" />
@@ -220,10 +242,12 @@ const MasterPanel = () => {
               <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p></div>
             </div>
 
-            {/* Create Button */}
-            <button onClick={() => setShowCreate(!showCreate)} className="btn-primary flex items-center gap-2 text-sm px-5 py-2.5">
-              <Plus className="w-4 h-4" /> {showCreate ? 'Cancel' : 'Create New Panel'}
-            </button>
+            {/* Create Button - Full access only */}
+            {canDelete && (
+              <button onClick={() => setShowCreate(!showCreate)} className="btn-primary flex items-center gap-2 text-sm px-5 py-2.5">
+                <Plus className="w-4 h-4" /> {showCreate ? 'Cancel' : 'Create New Panel'}
+              </button>
+            )}
 
             {/* Create Form */}
             {showCreate && (
@@ -274,11 +298,15 @@ const MasterPanel = () => {
                           <p className="text-[10px] text-muted-foreground mt-0.5">/{panel.slug}</p>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
-                            {panel.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
-                          </button>
+                          {canKillSwitch && (
+                            <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
+                              {panel.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
+                            </button>
+                          )}
                           <button onClick={() => copyToClipboard(panel.master_license_key)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors"><Copy className="w-4 h-4 text-muted-foreground" /></button>
-                          <button onClick={() => deletePanel(panel.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                          {canDelete && (
+                            <button onClick={() => deletePanel(panel.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                          )}
                         </div>
                       </div>
 
@@ -302,9 +330,11 @@ const MasterPanel = () => {
                           <Settings className="w-3.5 h-3.5" /> Details
                           <ChevronRight className="w-3 h-3" />
                         </button>
-                        <button onClick={() => setChangingPassword(changingPassword === panel.id ? null : panel.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
-                          <Lock className="w-3.5 h-3.5" /> Password
-                        </button>
+                        {canChangePasswords && (
+                          <button onClick={() => setChangingPassword(changingPassword === panel.id ? null : panel.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
+                            <Lock className="w-3.5 h-3.5" /> Password
+                          </button>
+                        )}
                         <button onClick={() => copyToClipboard(`${window.location.origin}/${panel.slug || panel.id}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                           <Globe className="w-3.5 h-3.5" /> Copy URL
                         </button>
@@ -336,9 +366,11 @@ const MasterPanel = () => {
                   <p className="text-xs text-accent font-mono mt-1">{selectedPanel.master_license_key}</p>
                   <p className="text-xs text-muted-foreground mt-1">URL: {window.location.origin}/{selectedPanel.slug}</p>
                 </div>
-                <button onClick={() => togglePanel(selectedPanel)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedPanel.is_active ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : 'bg-success/10 text-success hover:bg-success/20'}`}>
-                  {selectedPanel.is_active ? <><ToggleLeft className="w-4 h-4" /> Kill Switch</> : <><ToggleRight className="w-4 h-4" /> Enable</>}
-                </button>
+                {canKillSwitch && (
+                  <button onClick={() => togglePanel(selectedPanel)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedPanel.is_active ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : 'bg-success/10 text-success hover:bg-success/20'}`}>
+                    {selectedPanel.is_active ? <><ToggleLeft className="w-4 h-4" /> Kill Switch</> : <><ToggleRight className="w-4 h-4" /> Enable</>}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -378,14 +410,16 @@ const MasterPanel = () => {
                   </div>
                 </div>
 
-                {/* Change password inline */}
-                <div className="glass-admin p-4">
-                  <h4 className="text-sm font-bold mb-3 flex items-center gap-2"><Lock className="w-4 h-4 text-accent" /> Change Panel Password</h4>
-                  <div className="flex gap-2">
-                    <input value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="New password" className="input-admin flex-1 text-sm" />
-                    <button onClick={() => changePassword(selectedPanel.id)} disabled={!newPass.trim()} className="btn-admin text-xs px-4">Update</button>
+                {/* Change password inline - Full access only */}
+                {canChangePasswords && (
+                  <div className="glass-admin p-4">
+                    <h4 className="text-sm font-bold mb-3 flex items-center gap-2"><Lock className="w-4 h-4 text-accent" /> Change Panel Password</h4>
+                    <div className="flex gap-2">
+                      <input value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="New password" className="input-admin flex-1 text-sm" />
+                      <button onClick={() => changePassword(selectedPanel.id)} disabled={!newPass.trim()} className="btn-admin text-xs px-4">Update</button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -442,28 +476,35 @@ const MasterPanel = () => {
         {/* ===== BROADCASTS TAB ===== */}
         {tab === 'broadcasts' && (
           <div className="space-y-5 animate-in">
-            <div className="glass-admin p-5 space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
-              <h3 className="font-bold text-sm flex items-center gap-2"><SendIcon className="w-4 h-4 text-accent" /> Send Broadcast</h3>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TARGET</label>
-                <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
-                  <option value="all">All Panels (Global)</option>
-                  {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
-                </select>
+            {canSendBroadcast ? (
+              <div className="glass-admin p-5 space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
+                <h3 className="font-bold text-sm flex items-center gap-2"><SendIcon className="w-4 h-4 text-accent" /> Send Broadcast</h3>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TARGET</label>
+                  <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
+                    <option value="all">All Panels (Global)</option>
+                    {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TITLE</label>
+                  <input value={bcTitle} onChange={e => setBcTitle(e.target.value)} placeholder="e.g., Maintenance Notice" className="input-admin w-full text-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">MESSAGE</label>
+                  <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[80px] resize-y text-sm" />
+                </div>
+                <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2 text-sm">
+                  {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send
+                </button>
               </div>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TITLE</label>
-                <input value={bcTitle} onChange={e => setBcTitle(e.target.value)} placeholder="e.g., Maintenance Notice" className="input-admin w-full text-sm" />
+            ) : (
+              <div className="glass-admin p-5 text-center">
+                <Eye className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Monitor role: broadcast sending is disabled</p>
               </div>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">MESSAGE</label>
-                <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[80px] resize-y text-sm" />
-              </div>
-              <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2 text-sm">
-                {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send
-              </button>
-            </div>
+            )}
 
             <div className="glass-admin p-5">
               <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Broadcast History ({broadcasts.length})</h3>
