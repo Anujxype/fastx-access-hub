@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, generateKey, type ApiKey } from '@/lib/supabase';
 import {
-  Plus, RefreshCw, Key, Shield, Copy, Trash2, Eye, EyeOff,
+  Plus, RefreshCw, Key, Copy, Trash2, Eye, EyeOff,
   Clock, Globe, Loader2, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,7 +20,7 @@ const KeysManager = () => {
     setLoading(true);
     const { data, error } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
     if (error) { console.error('Keys fetch error:', error); setKeys([]); setLoading(false); return; }
-    setKeys((data || []).filter(k => k.key_value));
+    setKeys((data || []).filter((k: any) => k.key));
     setLoading(false);
   };
 
@@ -32,7 +32,7 @@ const KeysManager = () => {
     const val = keyValue.trim() || generateKey();
     await supabase.from('api_keys').insert({
       name: name.trim(),
-      key_value: val,
+      key: val,
       expires_at: expiresAt || null,
       allowed_ips: allowedIps || null,
     });
@@ -42,8 +42,8 @@ const KeysManager = () => {
   };
 
   const toggleKey = async (id: string, currentState: boolean) => {
-    await supabase.from('api_keys').update({ is_active: !currentState }).eq('id', id);
-    setKeys(keys.map(k => k.id === id ? { ...k, is_active: !currentState } : k));
+    await supabase.from('api_keys').update({ enabled: !currentState }).eq('id', id);
+    setKeys(keys.map(k => k.id === id ? { ...k, enabled: !currentState } : k));
   };
 
   const deleteKey = async (id: string) => {
@@ -124,17 +124,17 @@ const KeysManager = () => {
                   <div>
                     <p className="font-bold">{k.name}</p>
                     <p className="text-sm text-accent font-mono">
-                      {showKey[k.id] ? (k.key_value || '') : ((k.key_value || '').substring(0, 8) + '•••••')}
+                      {showKey[k.id] ? k.key : (k.key || '').substring(0, 8) + '•••••'}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => toggleKey(k.id, k.is_active)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={k.is_active ? 'Disable' : 'Enable'}>
-                      {k.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
+                    <button onClick={() => toggleKey(k.id, k.enabled)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={k.enabled ? 'Disable' : 'Enable'}>
+                      {k.enabled ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
                     </button>
                     <button onClick={() => setShowKey(s => ({ ...s, [k.id]: !s[k.id] }))} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
                       {showKey[k.id] ? <EyeOff className="w-4 h-4 text-accent" /> : <Eye className="w-4 h-4 text-accent" />}
                     </button>
-                    <button onClick={() => copyKey(k.key_value)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
+                    <button onClick={() => copyKey(k.key)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
                       <Copy className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button onClick={() => deleteKey(k.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors">
@@ -145,21 +145,20 @@ const KeysManager = () => {
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span>Created: {format(new Date(k.created_at), 'dd/MM/yyyy')}</span>
                   <span>Uses: {k.uses}</span>
-                  <span className={k.is_active ? 'status-active' : 'status-disabled'}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${k.is_active ? 'bg-success' : 'bg-destructive'}`} />
-                    {k.is_active ? 'Active' : 'Disabled'}
+                  <span className={k.enabled ? 'status-active' : 'status-disabled'}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${k.enabled ? 'bg-success' : 'bg-destructive'}`} />
+                    {k.enabled ? 'Active' : 'Disabled'}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {k.expires_at ? format(new Date(k.expires_at), 'dd/MM/yyyy') : 'No expiry'}
                   </span>
                 </div>
-                {k.allowed_ips && (
+                {k.allowed_ips ? (
                   <p className="text-xs text-primary flex items-center gap-1">
                     <Globe className="w-3 h-3" /> {k.allowed_ips}
                   </p>
-                )}
-                {!k.allowed_ips && (
+                ) : (
                   <p className="text-xs text-primary flex items-center gap-1">
                     <Globe className="w-3 h-3" /> Any IP
                   </p>
