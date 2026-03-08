@@ -37,19 +37,22 @@ const Portal = () => {
     setLoading(true); setError(''); setResult(null);
     try {
       const url = `${API_BASE}${selectedEndpoint.endpoint}?${selectedEndpoint.param}=${encodeURIComponent(query.trim())}`;
-      const res = await fetch(url);
+      const [res, geo] = await Promise.all([fetch(url), getGeoInfo()]);
       const data = await res.json();
       await supabase.from('api_logs').insert({
         key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
         query: query.trim(), status: res.ok ? 'success' : 'error',
         device: getDeviceInfo(), user_agent: navigator.userAgent,
+        ip_address: geo.ip, location: geo.location,
       });
       setResult(data);
     } catch (err: any) {
       setError(err.message || 'Request failed');
+      const geo = await getGeoInfo();
       await supabase.from('api_logs').insert({
         key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
         query: query.trim(), status: 'error', device: getDeviceInfo(), user_agent: navigator.userAgent,
+        ip_address: geo.ip, location: geo.location,
       });
     } finally { setLoading(false); }
   };
