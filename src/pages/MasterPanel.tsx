@@ -371,7 +371,6 @@ const MasterPanel = () => {
                     {selectedPanel.is_active ? <><ToggleLeft className="w-4 h-4" /> Kill Switch</> : <><ToggleRight className="w-4 h-4" /> Enable</>}
                   </button>
                 )}
-                </button>
               </div>
             </div>
 
