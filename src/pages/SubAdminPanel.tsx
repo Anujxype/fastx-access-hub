@@ -24,15 +24,13 @@ const TABS = [
 ];
 
 const SubAdminPanel = () => {
-  const { panelId } = useParams<{ panelId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
   const [panel, setPanel] = useState<ManagedPanel | null>(null);
+  const [panelId, setPanelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
   const [tab, setTab] = useState('keys');
   const [disabled, setDisabled] = useState(false);
   const [healthOk, setHealthOk] = useState<boolean | null>(null);
@@ -42,29 +40,35 @@ const SubAdminPanel = () => {
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
 
-  // Fetch panel data
+  // Fetch panel data by slug
   useEffect(() => {
-    if (!panelId) return;
+    if (!slug) return;
     const fetchPanel = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('managed_panels').select('*').eq('id', panelId).single();
+      const { data, error } = await supabase.from('managed_panels').select('*').eq('slug', slug.toLowerCase()).single();
       if (error || !data) {
-        navigate('/panel-disabled');
+        navigate(`/${slug}`);
         return;
       }
       setPanel(data);
+      setPanelId(data.id);
       // Check if panel is active and not expired
       const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
       if (!data.is_active || expired) {
         setDisabled(true);
       }
       // Check localStorage for existing session
-      const storedAuth = localStorage.getItem(`cfms_panel_${panelId}`);
-      if (storedAuth === 'true') setAuthenticated(true);
+      const storedAuth = localStorage.getItem(`cfms_panel_${data.id}`);
+      if (storedAuth === 'true') {
+        setAuthenticated(true);
+      } else {
+        navigate(`/${slug}`);
+        return;
+      }
       setLoading(false);
     };
     fetchPanel();
-  }, [panelId, navigate]);
+  }, [slug, navigate]);
 
   // Real-time kill switch
   useEffect(() => {
