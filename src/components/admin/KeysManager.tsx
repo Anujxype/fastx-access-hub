@@ -18,8 +18,11 @@ const KeysManager = () => {
 
   const fetchKeys = async () => {
     setLoading(true);
-    const { data } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
-    setKeys(data || []);
+    const { data, error } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
+    if (error) { console.error('Keys fetch error:', error); setKeys([]); setLoading(false); return; }
+    setKeys((data || []).filter(k => k.key_value));
+    setLoading(false);
+  };
     setLoading(false);
   };
 
