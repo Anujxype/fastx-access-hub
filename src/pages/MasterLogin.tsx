@@ -10,7 +10,6 @@ const MasterLogin = () => {
   const { user, masterAdmin, role, isPasswordAuth, loading, error, signInWithGoogle, signOut } = useMasterAuth();
   const [password, setPassword] = useState('');
   const [passError, setPassError] = useState('');
-  const [passLoading, setPassLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && ((user && masterAdmin && role) || isPasswordAuth)) {
