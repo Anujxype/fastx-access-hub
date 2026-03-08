@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import FastXLogo from '@/components/FastXLogo';
+import CFMSLogo from '@/components/CFMSLogo';
 import { Key, Shield, Loader2, Sparkles, ArrowRight, Zap } from 'lucide-react';
 
 const Login = () => {
@@ -54,29 +54,25 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background particles */}
       <div className="absolute inset-0 dot-grid opacity-30" />
       <div className="absolute top-1/4 -left-32 w-80 h-80 rounded-full bg-primary/5 blur-[120px] animate-float" />
       <div className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full bg-primary/8 blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[160px]" />
       
-      {/* Floating particles */}
       <div className="absolute top-20 left-20 w-2 h-2 rounded-full bg-primary/30 animate-particle" />
       <div className="absolute top-40 right-32 w-1.5 h-1.5 rounded-full bg-primary/25 animate-particle" style={{ animationDelay: '1s' }} />
       <div className="absolute bottom-32 left-1/3 w-1 h-1 rounded-full bg-primary/20 animate-particle" style={{ animationDelay: '2.5s' }} />
       <div className="absolute top-1/3 right-20 w-1.5 h-1.5 rounded-full bg-accent/20 animate-particle" style={{ animationDelay: '3.5s' }} />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-12 animate-in">
           <div className="relative mb-8 animate-glow-pulse animate-float">
             <div className="absolute -inset-4 rounded-2xl bg-primary/15 blur-2xl" />
             <div className="absolute -inset-8 rounded-3xl bg-primary/5 blur-3xl" />
-            <FastXLogo size={88} />
+            <CFMSLogo size={88} />
           </div>
           <h1 className="text-5xl font-black tracking-tight mb-3">
-            <span className="text-gradient-primary">Fast</span>
-            <span className="text-foreground">X</span>
+            <span className="text-gradient-primary">CFMS</span>
           </h1>
           <div className="flex items-center gap-3 mt-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/40" />
@@ -89,7 +85,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Login Card */}
         <div className="glass-strong p-8 space-y-6 animate-in-delay-1 animate-border-glow shimmer-overlay">
           <div>
             <label className="flex items-center gap-2 text-[11px] font-semibold text-primary mb-3 tracking-[0.2em]">
@@ -120,11 +115,7 @@ const Login = () => {
           )}
 
           <button onClick={handleLogin} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5">
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Shield className="w-5 h-5" />
-            )}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
             {loading ? 'Verifying...' : 'Access Portal'}
             {!loading && <ArrowRight className="w-4 h-4 ml-1" />}
           </button>
@@ -140,7 +131,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Security info */}
         <div className="flex items-center justify-center gap-6 mt-8 animate-in-delay-3">
           <div className="flex items-center gap-1.5 text-muted-foreground/30 text-[10px]">
             <div className="w-1 h-1 rounded-full bg-success animate-pulse" />

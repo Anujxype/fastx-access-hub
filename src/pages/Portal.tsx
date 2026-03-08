@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, API_BASE, ENDPOINTS, getDeviceInfo } from '@/lib/supabase';
-import FastXLogo from '@/components/FastXLogo';
+import CFMSLogo from '@/components/CFMSLogo';
 import {
   Smartphone, Fingerprint, Mail, FileText, Send, Building2,
   CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck,
@@ -71,15 +71,13 @@ const Portal = () => {
 
   return (
     <div className="min-h-screen pb-8 relative">
-      {/* Background texture */}
       <div className="fixed inset-0 dot-grid opacity-20 pointer-events-none" />
 
-      {/* Header */}
       <header className="glass-strong sticky top-0 z-50 px-4 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 animate-in">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute -inset-1 rounded-lg bg-primary/15 blur-md" />
-            <FastXLogo size={32} className="relative" />
+            <CFMSLogo size={32} className="relative" />
           </div>
           <div>
             <span className="font-bold text-base block leading-tight">{keyName}</span>
@@ -100,11 +98,10 @@ const Portal = () => {
         </div>
       </header>
 
-      {/* Broadcast popup */}
       {broadcast && (
         <div className="mx-4 mt-4 glass-admin p-4 animate-fade-in relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-accent/0 via-accent to-accent/0" />
-          <button onClick={() => setBroadcast(null)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors hover:rotate-90 transition-transform duration-300">
+          <button onClick={() => setBroadcast(null)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-4 h-4" />
           </button>
           <div className="flex items-start gap-3">
@@ -126,7 +123,6 @@ const Portal = () => {
           <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent ml-2" />
         </h2>
 
-        {/* Endpoint Grid */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {ENDPOINTS.map((ep, i) => {
             const Icon = iconMap[ep.icon] || Search;
@@ -149,9 +145,7 @@ const Portal = () => {
                 </div>
                 <p className={`font-semibold text-sm transition-colors duration-300 ${
                   isActive ? 'text-primary' : 'text-foreground'
-                }`}>
-                  {ep.label}
-                </p>
+                }`}>{ep.label}</p>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <p className="text-[10px] text-muted-foreground font-mono opacity-60">{ep.endpoint}</p>
                   <ChevronRight className={`w-3 h-3 transition-all duration-300 ${
@@ -163,13 +157,9 @@ const Portal = () => {
           })}
         </div>
 
-        {/* Query Section */}
         {selectedEndpoint && (
           <div className="glass-strong p-6 space-y-5 animate-fade-in-up relative overflow-hidden">
-            {/* Top accent line */}
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-primary/0 via-primary to-primary/0" />
-            
-            {/* Scanline effect */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.03]">
               <div className="w-full h-px bg-primary" style={{ animation: 'scanline 4s linear infinite' }} />
             </div>
@@ -218,23 +208,18 @@ const Portal = () => {
 
             {result && (
               <div className="glass p-5 animate-fade-in-up relative group">
-                {/* Copy button */}
                 <button
                   onClick={copyResult}
                   className="absolute top-3 right-3 p-2 rounded-lg bg-secondary/70 text-muted-foreground hover:text-foreground hover:bg-secondary opacity-0 group-hover:opacity-100 transition-all duration-300"
-                  title="Copy JSON"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
-                
-                {/* Response header */}
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/50">
                   <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-[10px] text-success font-mono tracking-wider">RESPONSE OK</span>
                   <div className="flex-1" />
                   <span className="text-[10px] text-muted-foreground/50 font-mono">JSON</span>
                 </div>
-
                 <pre className="text-[11px] text-foreground/80 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto">
                   {JSON.stringify(result, null, 2)}
                 </pre>

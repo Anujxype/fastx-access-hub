@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FastXLogo from '@/components/FastXLogo';
+import CFMSLogo from '@/components/CFMSLogo';
 import KeysManager from '@/components/admin/KeysManager';
 import LogsViewer from '@/components/admin/LogsViewer';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
@@ -62,7 +62,6 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen pb-8">
-      {/* Header */}
       <header className="glass-strong sticky top-0 z-50 px-4 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -71,7 +70,7 @@ const AdminPanel = () => {
               <Shield className="w-4 h-4 text-accent" />
             </div>
           </div>
-          <span className="font-bold text-lg">Akshu</span>
+          <span className="font-bold text-lg">CFMS</span>
           <span className="text-[10px] bg-accent/15 text-accent px-2.5 py-1 rounded-full border border-accent/25 font-semibold tracking-wider">Admin</span>
         </div>
         <div className="flex items-center gap-2">
@@ -85,7 +84,6 @@ const AdminPanel = () => {
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="px-4 mt-5 flex flex-wrap gap-2 mb-6 animate-in">
         {TABS.map((t, i) => {
           const Icon = t.icon;
@@ -102,7 +100,6 @@ const AdminPanel = () => {
         })}
       </div>
 
-      {/* Tab Content */}
       <div className="px-4">
         {tab === 'keys' && <KeysManager />}
         {tab === 'logs' && <LogsViewer />}
