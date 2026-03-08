@@ -370,7 +370,7 @@ const MasterPanel = () => {
                   </div>
                   <div className="glass p-4">
                     <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ENDPOINTS</p>
-                    <p className="text-sm">{(selectedPanel.allowed_endpoints || []).length} / {ALL_ENDPOINT_PATHS.length}</p>
+                    <p className="text-sm">{(selectedPanel.allowed_endpoints || []).length} / {allEndpoints.length}</p>
                   </div>
                 </div>
 
