@@ -32,7 +32,7 @@ const AdminPanel = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!localStorage.getItem('fastx_admin')) navigate('/admin-login');
+    if (!localStorage.getItem('cfms_admin')) navigate('/admin-login');
   }, [navigate]);
 
   useEffect(() => {
