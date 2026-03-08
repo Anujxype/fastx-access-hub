@@ -1,8 +1,6 @@
-import { forwardRef } from 'react';
-
-const FastXLogo = forwardRef<SVGSVGElement, { size?: number; className?: string }>(
-  ({ size = 48, className = "" }, ref) => (
-    <svg ref={ref} width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+const FastXLogo = ({ size = 48, className = "" }: { size?: number; className?: string }) => {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
       <defs>
         <linearGradient id="logoBg" x1="0" y1="0" x2="48" y2="48">
           <stop offset="0%" stopColor="hsl(160 84% 39% / 0.15)" />
@@ -17,9 +15,7 @@ const FastXLogo = forwardRef<SVGSVGElement, { size?: number; className?: string 
       <path d="M12 16h20M12 24h14M12 32h8" stroke="url(#logoStroke)" strokeWidth="2.5" strokeLinecap="round"/>
       <path d="M30 20l6 4-6 4" stroke="url(#logoStroke)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
-  )
-);
-
-FastXLogo.displayName = 'FastXLogo';
+  );
+};
 
 export default FastXLogo;
