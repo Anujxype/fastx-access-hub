@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, generateLicenseKey, generateSlug } from '@/lib/supabase';
+import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, fetchAllEndpoints, generateLicenseKey, generateSlug } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import LogsViewer from '@/components/admin/LogsViewer';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import KeysManager from '@/components/admin/KeysManager';
+import CustomEndpointManager from '@/components/admin/CustomEndpointManager';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -17,6 +18,7 @@ import {
 
 const TABS = [
   { id: 'panels', label: 'Panels', icon: Shield },
+  { id: 'endpoints', label: 'Endpoints', icon: Globe },
   { id: 'broadcasts', label: 'Broadcasts', icon: SendIcon },
   { id: 'logs', label: 'All Logs', icon: FileText },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -28,6 +30,7 @@ const MasterPanel = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPanel, setSelectedPanel] = useState<ManagedPanel | null>(null);
   const [detailTab, setDetailTab] = useState<'overview' | 'keys' | 'logs' | 'endpoints'>('overview');
+  const [allEndpoints, setAllEndpoints] = useState(ENDPOINTS);
 
   // Create panel form
   const [showCreate, setShowCreate] = useState(false);
@@ -60,7 +63,7 @@ const MasterPanel = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchPanels(); }, []);
+  useEffect(() => { fetchPanels(); fetchAllEndpoints().then(setAllEndpoints); }, []);
 
   useEffect(() => {
     if (tab === 'broadcasts') {
@@ -367,7 +370,7 @@ const MasterPanel = () => {
                   </div>
                   <div className="glass p-4">
                     <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ENDPOINTS</p>
-                    <p className="text-sm">{(selectedPanel.allowed_endpoints || []).length} / {ALL_ENDPOINT_PATHS.length}</p>
+                    <p className="text-sm">{(selectedPanel.allowed_endpoints || []).length} / {allEndpoints.length}</p>
                   </div>
                 </div>
 
@@ -387,7 +390,7 @@ const MasterPanel = () => {
                 <div>
                   <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" /> Allowed Endpoints</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {ENDPOINTS.map(ep => {
+                    {allEndpoints.map(ep => {
                       const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
                       return (
                         <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
@@ -409,7 +412,7 @@ const MasterPanel = () => {
                     <FileText className="w-4 h-4 text-accent" /> API Usage Reference
                   </h4>
                   <div className="space-y-1.5">
-                    {ENDPOINTS.map(ep => (
+                  {allEndpoints.map(ep => (
                       <div key={ep.endpoint} className="flex items-center gap-2 text-xs font-mono p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(selectedPanel.allowed_endpoints || []).includes(ep.endpoint) ? 'bg-success' : 'bg-destructive/40'}`} />
                         <span className="text-muted-foreground">{ep.label}:</span>
@@ -495,6 +498,9 @@ const MasterPanel = () => {
             </div>
           </div>
         )}
+
+        {/* ===== ENDPOINTS TAB ===== */}
+        {tab === 'endpoints' && <CustomEndpointManager />}
 
         {/* ===== LOGS TAB ===== */}
         {tab === 'logs' && <LogsViewer />}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, API_BASE, ENDPOINTS, getDeviceInfo, getGeoInfo } from '@/lib/supabase';
+import { supabase, API_BASE, ENDPOINTS, fetchAllEndpoints, getDeviceInfo, getGeoInfo } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import {
   Smartphone, Fingerprint, Mail, FileText, Send, Building2,
@@ -14,6 +14,7 @@ const iconMap: Record<string, any> = {
 };
 
 const Portal = () => {
+  const [allEndpoints, setAllEndpoints] = useState(ENDPOINTS);
   const [selectedEndpoint, setSelectedEndpoint] = useState<typeof ENDPOINTS[0] | null>(null);
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -30,6 +31,7 @@ const Portal = () => {
     if (!localStorage.getItem('fastx_key')) { navigate('/'); return; }
     const bc = localStorage.getItem('fastx_broadcast');
     if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('fastx_broadcast'); }
+    fetchAllEndpoints().then(setAllEndpoints);
   }, [navigate]);
 
   const handleSearch = async () => {
@@ -127,7 +129,7 @@ const Portal = () => {
         </h2>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {ENDPOINTS.map((ep, i) => {
+          {allEndpoints.map((ep, i) => {
             const Icon = iconMap[ep.icon] || Search;
             const isActive = selectedEndpoint?.endpoint === ep.endpoint;
             return (

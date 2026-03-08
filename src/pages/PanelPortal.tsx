@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase, API_BASE, ENDPOINTS, getDeviceInfo, getGeoInfo, type ManagedPanel } from '@/lib/supabase';
+import { supabase, API_BASE, ENDPOINTS, fetchAllEndpoints, getDeviceInfo, getGeoInfo, type ManagedPanel } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import AlertBanner from '@/components/AlertBanner';
 import {
@@ -19,6 +19,7 @@ const PanelPortal = () => {
   const navigate = useNavigate();
   const [panel, setPanel] = useState<ManagedPanel | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allEndpoints, setAllEndpoints] = useState(ENDPOINTS);
   const [selectedEndpoint, setSelectedEndpoint] = useState<typeof ENDPOINTS[0] | null>(null);
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -33,15 +34,17 @@ const PanelPortal = () => {
   useEffect(() => {
     if (!slug) return;
     const init = async () => {
-      // Check session
-      const { data } = await supabase.from('managed_panels').select('*').eq('slug', slug.toLowerCase()).single();
+      const [{ data }, endpoints] = await Promise.all([
+        supabase.from('managed_panels').select('*').eq('slug', slug.toLowerCase()).single(),
+        fetchAllEndpoints(),
+      ]);
       if (!data) { navigate(`/${slug}`); return; }
       setPanel(data);
+      setAllEndpoints(endpoints);
 
       const storedPortal = localStorage.getItem(`cfms_portal_${data.id}`);
       if (storedPortal !== 'true') { navigate(`/${slug}`); return; }
 
-      // Check active
       const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
       if (!data.is_active || expired) { navigate(`/${slug}`); return; }
 
@@ -51,7 +54,7 @@ const PanelPortal = () => {
   }, [slug, navigate]);
 
   const allowedEndpoints = panel?.allowed_endpoints || [];
-  const filteredEndpoints = ENDPOINTS.filter(ep => allowedEndpoints.includes(ep.endpoint));
+  const filteredEndpoints = allEndpoints.filter(ep => allowedEndpoints.includes(ep.endpoint));
 
   const handleSearch = async () => {
     if (!selectedEndpoint || !query.trim() || !panel) return;
