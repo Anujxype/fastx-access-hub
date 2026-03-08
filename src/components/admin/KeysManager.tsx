@@ -18,8 +18,11 @@ const KeysManager = () => {
 
   const fetchKeys = async () => {
     setLoading(true);
-    const { data } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
-    setKeys(data || []);
+    const { data, error } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
+    if (error) { console.error('Keys fetch error:', error); setKeys([]); setLoading(false); return; }
+    setKeys((data || []).filter(k => k.key_value));
+    setLoading(false);
+  };
     setLoading(false);
   };
 
@@ -123,7 +126,7 @@ const KeysManager = () => {
                   <div>
                     <p className="font-bold">{k.name}</p>
                     <p className="text-sm text-accent font-mono">
-                      {showKey[k.id] ? k.key_value : k.key_value.substring(0, 8) + '•••••'}
+                      {showKey[k.id] ? (k.key_value || '') : ((k.key_value || '').substring(0, 8) + '•••••')}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
