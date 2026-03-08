@@ -23,6 +23,7 @@ const TABS = [
   { id: 'broadcasts', label: 'Broadcasts', icon: SendIcon },
   { id: 'logs', label: 'All Logs', icon: FileText },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'admins', label: 'Admins', icon: Users },
 ];
 
 const ROLE_BADGE: Record<MasterRole, { label: string; color: string }> = {
