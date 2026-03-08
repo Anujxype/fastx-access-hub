@@ -87,9 +87,10 @@ export function useMasterAuth() {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
     localStorage.removeItem('cfms_master');
+    localStorage.removeItem('cfms_master_role');
     setState({ user: null, masterAdmin: null, role: null, loading: false, error: null });
+    try { await supabase.auth.signOut(); } catch {}
   };
 
   const storedRole = typeof window !== 'undefined' ? localStorage.getItem('cfms_master_role') : null;

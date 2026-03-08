@@ -39,6 +39,7 @@ const MasterPanel = () => {
   const [selectedPanel, setSelectedPanel] = useState<ManagedPanel | null>(null);
   const [detailTab, setDetailTab] = useState<'overview' | 'keys' | 'logs' | 'endpoints'>('overview');
   const [allEndpoints, setAllEndpoints] = useState(ENDPOINTS);
+  const [showProfile, setShowProfile] = useState(false);
 
   // Create panel form
   const [showCreate, setShowCreate] = useState(false);
@@ -226,8 +227,10 @@ const MasterPanel = () => {
     toast({ title: 'Copied to clipboard' });
   };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('cfms_master');
+    localStorage.removeItem('cfms_master_role');
+    signOut();
     navigate('/master-login');
   };
 
@@ -250,19 +253,69 @@ const MasterPanel = () => {
             {role && <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="hidden sm:flex items-center gap-2 mr-3">
+        <div className="flex items-center gap-1.5 relative">
+          {/* Profile Button */}
+          <button onClick={() => setShowProfile(!showProfile)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/50 transition-all">
             {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} className="w-6 h-6 rounded-full ring-1 ring-primary/20" alt="" />
+              <img src={user.user_metadata.avatar_url} className="w-7 h-7 rounded-full ring-2 ring-primary/25" alt="" />
             ) : (
-              <UserCircle className="w-5 h-5 text-muted-foreground" />
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary/25">
+                <span className="text-xs font-bold text-primary">{(masterAdmin?.display_name || user?.email || 'A')[0].toUpperCase()}</span>
+              </div>
             )}
-            <span className="text-[11px] font-medium text-muted-foreground max-w-[150px] truncate">{masterAdmin?.display_name || user?.email || (isPasswordAuth ? 'Password Admin' : '')}</span>
-          </span>
-          <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all">
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
+            <span className="hidden sm:inline text-[11px] font-medium text-muted-foreground max-w-[120px] truncate">{masterAdmin?.display_name || user?.email || (isPasswordAuth ? 'Admin' : '')}</span>
           </button>
+
+          {/* Profile Popup */}
+          {showProfile && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
+              <div className="absolute right-0 top-full mt-2 w-72 z-50 animate-scale-in origin-top-right">
+                <div className="glass-admin rounded-xl p-5 space-y-4 shadow-2xl border border-primary/15">
+                  <div className="flex items-center gap-3">
+                    {user?.user_metadata?.avatar_url ? (
+                      <img src={user.user_metadata.avatar_url} className="w-12 h-12 rounded-full ring-2 ring-primary/30" alt="" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary/30">
+                        <span className="text-lg font-bold text-primary">{(masterAdmin?.display_name || user?.email || 'A')[0].toUpperCase()}</span>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm truncate">{masterAdmin?.display_name || (isPasswordAuth ? 'Password Admin' : 'Admin')}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{user?.email || (isPasswordAuth ? 'Local authentication' : '')}</p>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Role</span>
+                      {role && <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Auth Method</span>
+                      <span className="text-foreground font-medium">{isPasswordAuth && !user ? 'Password' : 'Google OAuth'}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Panels</span>
+                      <span className="text-foreground font-medium">{panels.length}</span>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  <button
+                    onClick={() => { setShowProfile(false); handleLogout(); }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
