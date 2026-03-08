@@ -208,7 +208,7 @@ const MasterPanel = () => {
             </div>
 
             {/* Create Button */}
-            <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-2 text-sm font-semibold rounded-lg px-5 py-2.5" style={{ background: 'linear-gradient(135deg, hsl(280 70% 50%), hsl(280 60% 40%))', color: 'white' }}>
+            <button onClick={() => setShowCreate(!showCreate)} className="btn-primary flex items-center gap-2 text-sm px-5 py-2.5">
               <Plus className="w-4 h-4" /> {showCreate ? 'Cancel' : 'Create New Panel'}
             </button>
 
