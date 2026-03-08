@@ -24,15 +24,13 @@ const TABS = [
 ];
 
 const SubAdminPanel = () => {
-  const { panelId } = useParams<{ panelId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
   const [panel, setPanel] = useState<ManagedPanel | null>(null);
+  const [panelId, setPanelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
   const [tab, setTab] = useState('keys');
   const [disabled, setDisabled] = useState(false);
   const [healthOk, setHealthOk] = useState<boolean | null>(null);
@@ -42,29 +40,35 @@ const SubAdminPanel = () => {
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
 
-  // Fetch panel data
+  // Fetch panel data by slug
   useEffect(() => {
-    if (!panelId) return;
+    if (!slug) return;
     const fetchPanel = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('managed_panels').select('*').eq('id', panelId).single();
+      const { data, error } = await supabase.from('managed_panels').select('*').eq('slug', slug.toLowerCase()).single();
       if (error || !data) {
-        navigate('/panel-disabled');
+        navigate(`/${slug}`);
         return;
       }
       setPanel(data);
+      setPanelId(data.id);
       // Check if panel is active and not expired
       const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
       if (!data.is_active || expired) {
         setDisabled(true);
       }
       // Check localStorage for existing session
-      const storedAuth = localStorage.getItem(`cfms_panel_${panelId}`);
-      if (storedAuth === 'true') setAuthenticated(true);
+      const storedAuth = localStorage.getItem(`cfms_panel_${data.id}`);
+      if (storedAuth === 'true') {
+        setAuthenticated(true);
+      } else {
+        navigate(`/${slug}`);
+        return;
+      }
       setLoading(false);
     };
     fetchPanel();
-  }, [panelId, navigate]);
+  }, [slug, navigate]);
 
   // Real-time kill switch
   useEffect(() => {
@@ -102,26 +106,9 @@ const SubAdminPanel = () => {
     }
   }, [tab, authenticated]);
 
-  const handleLogin = () => {
-    if (!panel) return;
-    setLoginLoading(true);
-    setLoginError('');
-    setTimeout(() => {
-      if (password === panel.panel_password) {
-        setAuthenticated(true);
-        localStorage.setItem(`cfms_panel_${panelId}`, 'true');
-        toast({ title: 'Welcome', description: `Logged into ${panel.panel_name}` });
-      } else {
-        setLoginError('Invalid panel password');
-      }
-      setLoginLoading(false);
-    }, 600);
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem(`cfms_panel_${panelId}`);
-    setAuthenticated(false);
-    setPassword('');
+    if (panelId) localStorage.removeItem(`cfms_panel_${panelId}`);
+    navigate(`/${slug}`);
   };
 
   const handleChangePassword = async () => {
@@ -159,62 +146,9 @@ const SubAdminPanel = () => {
             {panel?.panel_name || 'This panel'} has been deactivated or the license has expired.
           </p>
           <p className="text-xs text-muted-foreground mb-6">Contact your Master Administrator for assistance.</p>
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-muted-foreground hover:text-primary mx-auto transition-all group">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Login gate
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 dot-grid opacity-20" />
-        <div className="absolute top-1/3 -left-32 w-80 h-80 rounded-full bg-accent/5 blur-[120px] animate-float" />
-
-        <div className="w-full max-w-md relative z-10">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 transition-all group animate-in">
+          <button onClick={() => navigate(`/${slug}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary mx-auto transition-all group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back
           </button>
-
-          <div className="flex flex-col items-center mb-10 animate-in-delay-1">
-            <div className="relative mb-6">
-              <div className="absolute -inset-4 rounded-full bg-accent/15 blur-2xl animate-glow-admin" />
-              <CFMSLogo size={72} className="ring-2 ring-accent/30 animate-float" />
-            </div>
-            <h1 className="text-2xl font-black">{panel?.panel_name || 'Panel'}</h1>
-            <p className="text-muted-foreground text-xs mt-2 tracking-wider">ADMIN ACCESS</p>
-          </div>
-
-          <div className="glass-admin p-8 space-y-6 animate-in-delay-2 shimmer-overlay">
-            <div>
-              <label className="flex items-center gap-2 text-[11px] font-semibold text-accent mb-3 tracking-[0.2em]">
-                <Lock className="w-4 h-4" /> PANEL PASSWORD
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="Enter panel password"
-                className="input-admin w-full text-sm"
-                autoFocus
-              />
-            </div>
-            {loginError && (
-              <div className="flex items-center gap-2.5 text-destructive text-sm p-3.5 rounded-lg bg-destructive/10 border border-destructive/20 animate-in">
-                <span className="w-2 h-2 rounded-full bg-destructive animate-pulse flex-shrink-0" />
-                {loginError}
-              </div>
-            )}
-            <button onClick={handleLogin} disabled={loginLoading} className="btn-admin w-full flex items-center justify-center gap-3 text-sm font-bold py-3.5">
-              {loginLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-              {loginLoading ? 'Authenticating...' : 'Access Panel'}
-              {!loginLoading && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </div>
         </div>
       </div>
     );

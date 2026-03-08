@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, generateLicenseKey } from '@/lib/supabase';
+import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, generateLicenseKey, generateSlug } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import LogsViewer from '@/components/admin/LogsViewer';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
@@ -72,8 +72,17 @@ const MasterPanel = () => {
     if (!newName.trim()) return;
     setCreating(true);
     const licenseKey = generateLicenseKey();
+    const slug = generateSlug(newName.trim());
+    // Check slug uniqueness
+    const { data: existing } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
+    if (existing) {
+      toast({ title: 'Error', description: `A panel with URL "/${slug}" already exists. Use a different name.`, variant: 'destructive' });
+      setCreating(false);
+      return;
+    }
     const { error } = await supabase.from('managed_panels').insert({
       panel_name: newName.trim(),
+      slug,
       master_license_key: licenseKey,
       panel_password: newPassword || 'admin123',
       expiry_date: newExpiry || null,
@@ -82,7 +91,7 @@ const MasterPanel = () => {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Panel Created', description: `License: ${licenseKey}` });
+      toast({ title: 'Panel Created', description: `URL: /${slug} | License: ${licenseKey}` });
       setNewName(''); setNewPassword('admin123'); setNewExpiry(''); setShowCreate(false);
     }
     await fetchPanels();
@@ -248,6 +257,7 @@ const MasterPanel = () => {
                             {expired && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium">EXPIRED</span>}
                           </div>
                           <p className="text-xs text-accent font-mono mt-1">{panel.master_license_key}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">/{panel.slug}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <button onClick={() => togglePanel(panel)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={panel.is_active ? 'Disable (Kill Switch)' : 'Enable'}>
@@ -281,7 +291,7 @@ const MasterPanel = () => {
                         <button onClick={() => setChangingPassword(changingPassword === panel.id ? null : panel.id)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                           <Lock className="w-3.5 h-3.5" /> Password
                         </button>
-                        <button onClick={() => copyToClipboard(`${window.location.origin}/panel/${panel.id}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
+                        <button onClick={() => copyToClipboard(`${window.location.origin}/${panel.slug || panel.id}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                           <Globe className="w-3.5 h-3.5" /> Copy URL
                         </button>
                       </div>

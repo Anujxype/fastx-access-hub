@@ -9,6 +9,8 @@ import Portal from "./pages/Portal";
 import AdminPanel from "./pages/AdminPanel";
 import MasterLogin from "./pages/MasterLogin";
 import MasterPanel from "./pages/MasterPanel";
+import PanelLanding from "./pages/PanelLanding";
+import PanelPortal from "./pages/PanelPortal";
 import SubAdminPanel from "./pages/SubAdminPanel";
 import PanelDisabled from "./pages/PanelDisabled";
 import NotFound from "./pages/NotFound";
@@ -28,8 +30,11 @@ const App = () => (
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/master-login" element={<MasterLogin />} />
           <Route path="/master" element={<MasterPanel />} />
-          <Route path="/panel/:panelId" element={<SubAdminPanel />} />
           <Route path="/panel-disabled" element={<PanelDisabled />} />
+          {/* Slug-based panel routes */}
+          <Route path="/:slug" element={<PanelLanding />} />
+          <Route path="/:slug/portal" element={<PanelPortal />} />
+          <Route path="/:slug/admin" element={<SubAdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
