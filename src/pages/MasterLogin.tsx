@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { MASTER_PASSWORD, ADMIN_PASSWORD } from '@/lib/supabase';
+import { MASTER_PASSWORD } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import { Crown, Loader2, ArrowLeft, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
 
