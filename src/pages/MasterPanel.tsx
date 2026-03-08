@@ -505,8 +505,6 @@ const MasterPanel = () => {
                 <p className="text-muted-foreground text-sm">Monitor role: broadcast sending is disabled</p>
               </div>
             )}
-              </button>
-            </div>
 
             <div className="glass-admin p-5">
               <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Broadcast History ({broadcasts.length})</h3>
