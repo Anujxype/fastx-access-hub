@@ -476,26 +476,35 @@ const MasterPanel = () => {
         {/* ===== BROADCASTS TAB ===== */}
         {tab === 'broadcasts' && (
           <div className="space-y-5 animate-in">
-            <div className="glass-admin p-5 space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
-              <h3 className="font-bold text-sm flex items-center gap-2"><SendIcon className="w-4 h-4 text-accent" /> Send Broadcast</h3>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TARGET</label>
-                <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
-                  <option value="all">All Panels (Global)</option>
-                  {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
-                </select>
+            {canSendBroadcast ? (
+              <div className="glass-admin p-5 space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
+                <h3 className="font-bold text-sm flex items-center gap-2"><SendIcon className="w-4 h-4 text-accent" /> Send Broadcast</h3>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TARGET</label>
+                  <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
+                    <option value="all">All Panels (Global)</option>
+                    {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TITLE</label>
+                  <input value={bcTitle} onChange={e => setBcTitle(e.target.value)} placeholder="e.g., Maintenance Notice" className="input-admin w-full text-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">MESSAGE</label>
+                  <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[80px] resize-y text-sm" />
+                </div>
+                <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2 text-sm">
+                  {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send
+                </button>
               </div>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TITLE</label>
-                <input value={bcTitle} onChange={e => setBcTitle(e.target.value)} placeholder="e.g., Maintenance Notice" className="input-admin w-full text-sm" />
+            ) : (
+              <div className="glass-admin p-5 text-center">
+                <Eye className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Monitor role: broadcast sending is disabled</p>
               </div>
-              <div>
-                <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">MESSAGE</label>
-                <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[80px] resize-y text-sm" />
-              </div>
-              <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2 text-sm">
-                {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send
+            )}
               </button>
             </div>
 
