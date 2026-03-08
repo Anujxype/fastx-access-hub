@@ -120,7 +120,7 @@ const Login = () => {
             {!loading && <ArrowRight className="w-4 h-4 ml-1" />}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-2 flex items-center justify-center gap-3">
             <button
               onClick={() => navigate('/admin-login')}
               className="text-muted-foreground hover:text-accent text-sm transition-all duration-300 hover:tracking-wider group inline-flex items-center gap-1.5"
@@ -131,7 +131,7 @@ const Login = () => {
             <span className="text-muted-foreground/20">|</span>
             <button
               onClick={() => navigate('/master-login')}
-              className="text-muted-foreground hover:text-purple-400 text-sm transition-all duration-300 hover:tracking-wider group inline-flex items-center gap-1.5"
+              className="text-muted-foreground hover:text-primary text-sm transition-all duration-300 hover:tracking-wider group inline-flex items-center gap-1.5"
             >
               Master Panel
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
