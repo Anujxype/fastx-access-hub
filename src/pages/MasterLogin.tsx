@@ -7,7 +7,7 @@ import { Crown, Loader2, ArrowLeft, ShieldCheck, Lock, ArrowRight } from 'lucide
 
 const MasterLogin = () => {
   const navigate = useNavigate();
-  const { user, masterAdmin, role, loading, error, signInWithGoogle, signOut } = useMasterAuth();
+  const { user, masterAdmin, role, isPasswordAuth, loading, error, signInWithGoogle, signOut } = useMasterAuth();
   const [password, setPassword] = useState('');
   const [passError, setPassError] = useState('');
   const [passLoading, setPassLoading] = useState(false);
