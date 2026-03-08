@@ -41,7 +41,7 @@ export function useMasterAuth() {
     user: null,
     masterAdmin: null,
     role: null,
-    loading: true,
+    loading: false,
     error: null,
   });
   const initialized = useRef(false);

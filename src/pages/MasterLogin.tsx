@@ -10,7 +10,6 @@ const MasterLogin = () => {
   const { user, masterAdmin, role, isPasswordAuth, loading, error, signInWithGoogle, signOut } = useMasterAuth();
   const [password, setPassword] = useState('');
   const [passError, setPassError] = useState('');
-  const [passLoading, setPassLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && ((user && masterAdmin && role) || isPasswordAuth)) {
@@ -24,20 +23,16 @@ const MasterLogin = () => {
 
   const handlePasswordLogin = () => {
     const normalizedPassword = password.trim();
+    if (!normalizedPassword) return;
     const validMasterPasswords = [MASTER_PASSWORD.trim(), 'cfms7890'];
 
-    setPassLoading(true);
-    setPassError('');
-    setTimeout(() => {
-      if (validMasterPasswords.includes(normalizedPassword)) {
-        localStorage.setItem('cfms_master', 'true');
-        localStorage.setItem('cfms_master_role', 'full');
-        navigate('/master');
-      } else {
-        setPassError('Invalid master password');
-      }
-      setPassLoading(false);
-    }, 800);
+    if (validMasterPasswords.includes(normalizedPassword)) {
+      localStorage.setItem('cfms_master', 'true');
+      localStorage.setItem('cfms_master_role', 'full');
+      navigate('/master');
+    } else {
+      setPassError('Invalid master password');
+    }
   };
 
   return (
@@ -145,10 +140,10 @@ const MasterLogin = () => {
                   </div>
                 )}
 
-                <button onClick={handlePasswordLogin} disabled={passLoading} className="w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-all">
-                  {passLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
-                  {passLoading ? 'Authenticating...' : 'Login with Password'}
-                  {!passLoading && <ArrowRight className="w-4 h-4 ml-1" />}
+                <button onClick={handlePasswordLogin} className="w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-all">
+                  <Lock className="w-5 h-5" />
+                  Login with Password
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </button>
               </div>
             </div>
