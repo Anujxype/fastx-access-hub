@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, API_BASE, ENDPOINTS, getDeviceInfo, getGeoInfo } from '@/lib/supabase';
+import { supabase, API_BASE, ENDPOINTS, fetchAllEndpoints, getDeviceInfo, getGeoInfo } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import {
   Smartphone, Fingerprint, Mail, FileText, Send, Building2,
