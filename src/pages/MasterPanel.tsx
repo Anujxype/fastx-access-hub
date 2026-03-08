@@ -412,7 +412,7 @@ const MasterPanel = () => {
                     <FileText className="w-4 h-4 text-accent" /> API Usage Reference
                   </h4>
                   <div className="space-y-1.5">
-                  allEndpointsNTS.map(ep => (
+                  {allEndpoints.map(ep => (
                       <div key={ep.endpoint} className="flex items-center gap-2 text-xs font-mono p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(selectedPanel.allowed_endpoints || []).includes(ep.endpoint) ? 'bg-success' : 'bg-destructive/40'}`} />
                         <span className="text-muted-foreground">{ep.label}:</span>
