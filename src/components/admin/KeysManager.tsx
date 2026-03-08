@@ -83,9 +83,14 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
       toast({ title: 'Validation Error', description: 'Key name is required', variant: 'destructive' });
       return;
     }
-    // Check duplicate names
-    if (keys.some(k => k.name.toLowerCase() === name.trim().toLowerCase())) {
-      toast({ title: 'Duplicate Name', description: 'A key with this name already exists', variant: 'destructive' });
+    // Check duplicate names globally in DB
+    const { data: existingKey } = await supabase
+      .from('api_keys')
+      .select('id, name')
+      .ilike('name', name.trim())
+      .maybeSingle();
+    if (existingKey) {
+      toast({ title: 'Duplicate Name', description: `A key named "${existingKey.name}" already exists. Delete it first before creating a new one.`, variant: 'destructive' });
       return;
     }
     setCreating(true);

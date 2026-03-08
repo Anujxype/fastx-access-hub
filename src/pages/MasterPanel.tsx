@@ -383,22 +383,46 @@ const MasterPanel = () => {
             )}
 
             {detailTab === 'endpoints' && (
-              <div className="glass-admin p-5 animate-in">
-                <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" /> Allowed Endpoints</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {ENDPOINTS.map(ep => {
-                    const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
-                    return (
-                      <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
-                        className={`flex items-center gap-2 p-3 rounded-lg text-xs font-medium transition-all text-left ${enabled ? 'bg-success/10 text-success border border-success/20' : 'bg-secondary/30 text-muted-foreground border border-transparent hover:border-border/50'}`}>
-                        {enabled ? <CheckSquare className="w-4 h-4 flex-shrink-0" /> : <Square className="w-4 h-4 flex-shrink-0" />}
-                        <div>
-                          <p className="font-mono">{ep.endpoint}</p>
-                          <p className="text-[10px] opacity-60">{ep.label}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
+              <div className="glass-admin p-5 animate-in space-y-5">
+                <div>
+                  <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-accent" /> Allowed Endpoints</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ENDPOINTS.map(ep => {
+                      const enabled = (selectedPanel.allowed_endpoints || []).includes(ep.endpoint);
+                      return (
+                        <button key={ep.endpoint} onClick={() => toggleEndpoint(selectedPanel, ep.endpoint)}
+                          className={`flex items-center gap-2 p-3 rounded-lg text-xs font-medium transition-all text-left ${enabled ? 'bg-success/10 text-success border border-success/20' : 'bg-secondary/30 text-muted-foreground border border-transparent hover:border-border/50'}`}>
+                          {enabled ? <CheckSquare className="w-4 h-4 flex-shrink-0" /> : <Square className="w-4 h-4 flex-shrink-0" />}
+                          <div>
+                            <p className="font-mono">{ep.endpoint}</p>
+                            <p className="text-[10px] opacity-60">{ep.label}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Endpoint Usage Reference */}
+                <div className="glass p-4">
+                  <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-accent" /> API Usage Reference
+                  </h4>
+                  <div className="space-y-1.5">
+                    {ENDPOINTS.map(ep => (
+                      <div key={ep.endpoint} className="flex items-center gap-2 text-xs font-mono p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(selectedPanel.allowed_endpoints || []).includes(ep.endpoint) ? 'bg-success' : 'bg-destructive/40'}`} />
+                        <span className="text-muted-foreground">{ep.label}:</span>
+                        <span className="text-accent truncate">{ep.endpoint}?{ep.param}=&#123;value&#125;</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(`${ep.endpoint}?${ep.param}={value}`); toast({ title: 'Copied', description: `${ep.endpoint} format copied` }); }}
+                          className="ml-auto p-1 hover:bg-accent/10 rounded transition-colors flex-shrink-0"
+                        >
+                          <Copy className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
