@@ -128,6 +128,14 @@ const Login = () => {
               Admin Access
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </button>
+            <span className="text-muted-foreground/20">|</span>
+            <button
+              onClick={() => navigate('/master-login')}
+              className="text-muted-foreground hover:text-purple-400 text-sm transition-all duration-300 hover:tracking-wider group inline-flex items-center gap-1.5"
+            >
+              Master Panel
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
 
