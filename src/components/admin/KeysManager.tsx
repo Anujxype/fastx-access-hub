@@ -20,7 +20,7 @@ const KeysManager = () => {
     setLoading(true);
     const { data, error } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
     if (error) { console.error('Keys fetch error:', error); setKeys([]); setLoading(false); return; }
-    setKeys((data || []).filter((k: any) => k.key));
+    setKeys((data || []).filter((k: any) => k.key_value));
     setLoading(false);
   };
 
@@ -32,7 +32,7 @@ const KeysManager = () => {
     const val = keyValue.trim() || generateKey();
     await supabase.from('api_keys').insert({
       name: name.trim(),
-      key: val,
+      key_value: val,
       expires_at: expiresAt || null,
       allowed_ips: allowedIps || null,
     });
@@ -42,8 +42,8 @@ const KeysManager = () => {
   };
 
   const toggleKey = async (id: string, currentState: boolean) => {
-    await supabase.from('api_keys').update({ enabled: !currentState }).eq('id', id);
-    setKeys(keys.map(k => k.id === id ? { ...k, enabled: !currentState } : k));
+    await supabase.from('api_keys').update({ is_active: !currentState }).eq('id', id);
+    setKeys(keys.map(k => k.id === id ? { ...k, is_active: !currentState } : k));
   };
 
   const deleteKey = async (id: string) => {
@@ -58,18 +58,15 @@ const KeysManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Create Key */}
       <div className="glass-admin p-5 space-y-4 animate-in">
         <h3 className="font-bold flex items-center gap-2">
           <Plus className="w-5 h-5 text-accent" />
           Create New Key
         </h3>
-
         <div>
           <label className="text-xs font-semibold text-muted-foreground tracking-wider mb-1.5 block">KEY NAME</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., User Alpha" className="input-admin w-full" />
         </div>
-
         <div>
           <label className="text-xs font-semibold text-muted-foreground tracking-wider mb-1.5 block">KEY VALUE (AUTO IF EMPTY)</label>
           <div className="flex gap-2">
@@ -79,28 +76,24 @@ const KeysManager = () => {
             </button>
           </div>
         </div>
-
         <div>
           <label className="text-xs font-semibold text-muted-foreground tracking-wider mb-1.5 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" /> VALID UNTIL (OPTIONAL)
           </label>
           <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="input-admin w-full" />
         </div>
-
         <div>
           <label className="text-xs font-semibold text-muted-foreground tracking-wider mb-1.5 flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5" /> ALLOWED IPS (COMMA-SEPARATED, OPTIONAL)
           </label>
           <input value={allowedIps} onChange={e => setAllowedIps(e.target.value)} placeholder="e.g. 192.168.1.1, 10.0.0.1" className="input-admin w-full" />
         </div>
-
         <button onClick={createKey} disabled={creating} className="btn-admin flex items-center gap-2">
           {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Create Key
         </button>
       </div>
 
-      {/* Active Keys */}
       <div className="glass-admin p-5 animate-in-delay-1">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold flex items-center gap-2">
@@ -124,17 +117,17 @@ const KeysManager = () => {
                   <div>
                     <p className="font-bold">{k.name}</p>
                     <p className="text-sm text-accent font-mono">
-                      {showKey[k.id] ? k.key : (k.key || '').substring(0, 8) + '•••••'}
+                      {showKey[k.id] ? k.key_value : (k.key_value || '').substring(0, 8) + '•••••'}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => toggleKey(k.id, k.enabled)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={k.enabled ? 'Disable' : 'Enable'}>
-                      {k.enabled ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
+                    <button onClick={() => toggleKey(k.id, k.is_active)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors" title={k.is_active ? 'Disable' : 'Enable'}>
+                      {k.is_active ? <ToggleRight className="w-5 h-5 text-success" /> : <ToggleLeft className="w-5 h-5 text-destructive" />}
                     </button>
                     <button onClick={() => setShowKey(s => ({ ...s, [k.id]: !s[k.id] }))} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
                       {showKey[k.id] ? <EyeOff className="w-4 h-4 text-accent" /> : <Eye className="w-4 h-4 text-accent" />}
                     </button>
-                    <button onClick={() => copyKey(k.key)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
+                    <button onClick={() => copyKey(k.key_value)} className="p-1.5 hover:bg-secondary/50 rounded transition-colors">
                       <Copy className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button onClick={() => deleteKey(k.id)} className="p-1.5 hover:bg-destructive/10 rounded transition-colors">
@@ -145,9 +138,9 @@ const KeysManager = () => {
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span>Created: {format(new Date(k.created_at), 'dd/MM/yyyy')}</span>
                   <span>Uses: {k.uses}</span>
-                  <span className={k.enabled ? 'status-active' : 'status-disabled'}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${k.enabled ? 'bg-success' : 'bg-destructive'}`} />
-                    {k.enabled ? 'Active' : 'Disabled'}
+                  <span className={k.is_active ? 'status-active' : 'status-disabled'}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${k.is_active ? 'bg-success' : 'bg-destructive'}`} />
+                    {k.is_active ? 'Active' : 'Disabled'}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -155,13 +148,9 @@ const KeysManager = () => {
                   </span>
                 </div>
                 {k.allowed_ips ? (
-                  <p className="text-xs text-primary flex items-center gap-1">
-                    <Globe className="w-3 h-3" /> {k.allowed_ips}
-                  </p>
+                  <p className="text-xs text-primary flex items-center gap-1"><Globe className="w-3 h-3" /> {k.allowed_ips}</p>
                 ) : (
-                  <p className="text-xs text-primary flex items-center gap-1">
-                    <Globe className="w-3 h-3" /> Any IP
-                  </p>
+                  <p className="text-xs text-primary flex items-center gap-1"><Globe className="w-3 h-3" /> Any IP</p>
                 )}
               </div>
             ))}

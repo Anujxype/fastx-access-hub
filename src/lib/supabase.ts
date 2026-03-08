@@ -13,11 +13,11 @@ export const ADMIN_PASSWORD = 'stk7890';
 export interface ApiKey {
   id: string;
   name: string;
-  key: string;
-  enabled: boolean;
+  key_value: string;
+  is_active: boolean;
   uses: number;
-  expires_at?: string | null;
-  allowed_ips?: string | null;
+  expires_at: string | null;
+  allowed_ips: string | null;
   created_at: string;
 }
 

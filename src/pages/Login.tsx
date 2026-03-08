@@ -24,8 +24,8 @@ const Login = () => {
       const { data, error: dbError } = await supabase
         .from('api_keys')
         .select('*')
-        .eq('key', key.trim())
-        .eq('enabled', true)
+        .eq('key_value', key.trim())
+        .eq('is_active', true)
         .maybeSingle();
 
       if (dbError) throw dbError;
@@ -45,7 +45,7 @@ const Login = () => {
       // Increment uses
       await supabase.from('api_keys').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id);
 
-      localStorage.setItem('fastx_key', data.key);
+      localStorage.setItem('fastx_key', data.key_value);
       localStorage.setItem('fastx_key_name', data.name);
       localStorage.setItem('fastx_key_id', data.id);
 
