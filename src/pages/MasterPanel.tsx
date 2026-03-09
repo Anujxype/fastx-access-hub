@@ -209,6 +209,19 @@ const MasterPanel = () => {
         return;
       }
 
+      // Check password uniqueness
+      const passwordToUse = newPassword || 'admin123';
+      const { data: pwDup } = await supabase
+        .from('managed_panels')
+        .select('id')
+        .eq('panel_password', passwordToUse)
+        .maybeSingle();
+      if (pwDup) {
+        toast({ title: 'Error', description: 'This password is already used by another panel. Choose a unique password.', variant: 'destructive' });
+        setCreating(false);
+        return;
+      }
+
       // Fetch latest endpoints for default assignment
       const latestEndpoints = await fetchAllEndpoints();
       const allPaths = latestEndpoints.map(e => e.endpoint);
@@ -217,7 +230,7 @@ const MasterPanel = () => {
         panel_name: newName.trim(),
         slug,
         master_license_key: licenseKey,
-        panel_password: newPassword || 'admin123',
+        panel_password: passwordToUse,
         expiry_date: newExpiry || null,
         allowed_endpoints: allPaths,
         is_active: true,
