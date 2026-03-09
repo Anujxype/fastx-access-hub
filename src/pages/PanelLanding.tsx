@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Key, Loader2, Lock, Shield, ShieldOff, Zap } from "lucide-react";
 
-import { supabase, type ManagedPanel } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { usePanelLanding } from "@/hooks/usePanelLanding";
 import PanelLandingScaffold from "@/components/panel/PanelLandingScaffold";
 import PanelLandingHeader from "@/components/panel/PanelLandingHeader";
 import PanelModeChoose from "@/components/panel/PanelModeChoose";
@@ -13,10 +14,7 @@ const PanelLanding = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const [panel, setPanel] = useState<ManagedPanel | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [disabled, setDisabled] = useState(false);
+  const { panel, loading, notFound, disabled, redirectTo } = usePanelLanding(slug);
 
   // Portal login state
   const [mode, setMode] = useState<"choose" | "portal" | "admin">("choose");
@@ -26,46 +24,8 @@ const PanelLanding = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!slug) return;
-
-    const fetchPanel = async () => {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("managed_panels")
-        .select("*")
-        .eq("slug", slug.toLowerCase())
-        .single();
-
-      if (error || !data) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setPanel(data);
-      const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
-      if (!data.is_active || expired) {
-        setDisabled(true);
-      }
-
-      // Check existing sessions
-      const storedPortal = localStorage.getItem(`cfms_portal_${data.id}`);
-      if (storedPortal === "true") {
-        navigate(`/${slug}/portal`);
-        return;
-      }
-      const storedAdmin = localStorage.getItem(`cfms_panel_${data.id}`);
-      if (storedAdmin === "true") {
-        navigate(`/${slug}/admin`);
-        return;
-      }
-
-      setLoading(false);
-    };
-
-    fetchPanel();
-  }, [slug, navigate]);
+    if (redirectTo) navigate(redirectTo);
+  }, [redirectTo, navigate]);
 
   const handlePortalLogin = async () => {
     if (!key.trim() || !panel) return;
