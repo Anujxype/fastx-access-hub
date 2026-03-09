@@ -220,7 +220,7 @@ const SubAdminPanel = () => {
         </nav>
       </div>
 
-      <div className="px-4 sm:px-6">
+      <div className="px-4 sm:px-6" role="tabpanel" id={`tabpanel-${tab}`}>
         {tab === 'keys' && panelId && <KeysManager panelId={panelId} />}
         {tab === 'logs' && panelId && <LogsViewer panelId={panelId} />}
         {tab === 'analytics' && panelId && <AnalyticsDashboard panelId={panelId} />}
