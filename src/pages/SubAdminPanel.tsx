@@ -21,7 +21,14 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'health', label: 'Health', icon: Heart },
   { id: 'settings', label: 'Settings', icon: ClipboardCheck },
-];
+] as const;
+
+const HEALTH_SERVICES = [
+  { name: 'Database', icon: Database, status: 'Online' },
+  { name: 'API Gateway', icon: Globe, status: 'Online' },
+  { name: 'Auth Service', icon: Lock, status: 'Online' },
+  { name: 'Storage', icon: Server, status: 'Online' },
+] as const;
 
 const SubAdminPanel = () => {
   const { slug } = useParams<{ slug: string }>();
