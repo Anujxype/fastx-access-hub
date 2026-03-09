@@ -55,8 +55,9 @@ const PanelAccessCard = ({
         onClick={onBack}
         className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 transition-all"
       >
-        ← Back
+        ← Back
       </button>
+
 
 
       <div>
