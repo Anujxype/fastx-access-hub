@@ -103,14 +103,20 @@ const SubAdminPanel = () => {
     return () => { supabase.removeChannel(channel); };
   }, [panelId]);
 
-  // Health check
+  // Health check with timeout
   useEffect(() => {
-    if (tab === 'health' && authenticated) {
-      setHealthOk(null);
-      fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
-        headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' }
-      }).then(r => setHealthOk(r.ok)).catch(() => setHealthOk(false));
-    }
+    if (tab !== 'health' || !authenticated) return;
+    setHealthOk(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
+      headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' },
+      signal: controller.signal,
+    })
+      .then(r => setHealthOk(r.ok))
+      .catch(() => setHealthOk(false))
+      .finally(() => clearTimeout(timeout));
+    return () => { controller.abort(); clearTimeout(timeout); };
   }, [tab, authenticated]);
 
   const handleLogout = () => {
