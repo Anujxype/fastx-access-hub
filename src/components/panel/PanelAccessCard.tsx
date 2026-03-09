@@ -55,8 +55,9 @@ const PanelAccessCard = ({
         onClick={onBack}
         className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 transition-all"
       >
-        ← Back
+        ← Back
       </button>
+
 
       <div>
         <label className={`flex items-center gap-2 text-[11px] font-semibold mb-3 tracking-[0.2em] ${toneToLabelClass[tone]}`}>
