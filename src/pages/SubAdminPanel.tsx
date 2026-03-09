@@ -21,7 +21,14 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'health', label: 'Health', icon: Heart },
   { id: 'settings', label: 'Settings', icon: ClipboardCheck },
-];
+] as const;
+
+const HEALTH_SERVICES = [
+  { name: 'Database', icon: Database, status: 'Online' },
+  { name: 'API Gateway', icon: Globe, status: 'Online' },
+  { name: 'Auth Service', icon: Lock, status: 'Online' },
+  { name: 'Storage', icon: Server, status: 'Online' },
+] as const;
 
 const SubAdminPanel = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -96,14 +103,20 @@ const SubAdminPanel = () => {
     return () => { supabase.removeChannel(channel); };
   }, [panelId]);
 
-  // Health check
+  // Health check with timeout
   useEffect(() => {
-    if (tab === 'health' && authenticated) {
-      setHealthOk(null);
-      fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
-        headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' }
-      }).then(r => setHealthOk(r.ok)).catch(() => setHealthOk(false));
-    }
+    if (tab !== 'health' || !authenticated) return;
+    setHealthOk(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
+      headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' },
+      signal: controller.signal,
+    })
+      .then(r => setHealthOk(r.ok))
+      .catch(() => setHealthOk(false))
+      .finally(() => clearTimeout(timeout));
+    return () => { controller.abort(); clearTimeout(timeout); };
   }, [tab, authenticated]);
 
   const handleLogout = () => {
@@ -193,21 +206,21 @@ const SubAdminPanel = () => {
 
       {/* Tabs */}
       <div className="px-4 sm:px-6 mt-5 mb-6">
-        <div className="flex gap-1.5 overflow-x-auto pb-2">
-          {TABS.map((t, i) => {
+        <nav className="flex gap-1.5 overflow-x-auto pb-2" role="tablist" aria-label="Panel sections">
+          {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
             return (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button key={t.id} role="tab" aria-selected={isActive} aria-controls={`tabpanel-${t.id}`} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}>
                 <Icon className="w-4 h-4" /> {t.label}
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
 
-      <div className="px-4 sm:px-6">
+      <div className="px-4 sm:px-6" role="tabpanel" id={`tabpanel-${tab}`}>
         {tab === 'keys' && panelId && <KeysManager panelId={panelId} />}
         {tab === 'logs' && panelId && <LogsViewer panelId={panelId} />}
         {tab === 'analytics' && panelId && <AnalyticsDashboard panelId={panelId} />}
@@ -231,12 +244,7 @@ const SubAdminPanel = () => {
                     <span className="text-success font-semibold text-sm">All Systems Operational</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mt-4">
-                    {[
-                      { name: 'Database', icon: Database, status: 'Online' },
-                      { name: 'API Gateway', icon: Globe, status: 'Online' },
-                      { name: 'Auth Service', icon: Lock, status: 'Online' },
-                      { name: 'Storage', icon: Server, status: 'Online' },
-                    ].map(s => (
+                    {HEALTH_SERVICES.map(s => (
                       <div key={s.name} className="glass p-4 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                           <s.icon className="w-5 h-5 text-success" />
