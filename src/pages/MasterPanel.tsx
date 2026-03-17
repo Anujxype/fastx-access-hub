@@ -501,21 +501,20 @@ const MasterPanel = () => {
 
       {/* Tabs */}
       <div className="px-4 sm:px-6 mt-5 mb-6">
-        <div className="flex gap-1.5 overflow-x-auto pb-2">
+        <nav className="flex gap-1.5 overflow-x-auto pb-2" role="tablist" aria-label="Master panel sections">
           {TABS.map(t => {
             const Icon = t.icon;
             const isActive = tab === t.id;
-            // Hide admin-only tabs from monitor role
             if (t.id === 'admins' && role === 'monitor') return null;
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'text-primary border border-primary/30 bg-primary/10' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
+              <button key={t.id} role="tab" aria-selected={isActive} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 shadow-[0_0_16px_-4px_hsl(265_72%_58%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
               >
-                <Icon className="w-4 h-4" /> {t.label}
+                <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} /> {t.label}
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
 
       <div className="px-4 sm:px-6">
