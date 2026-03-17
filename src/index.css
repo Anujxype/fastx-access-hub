@@ -408,3 +408,30 @@
 .animate-border-glow { animation: borderGlow 3s ease-in-out infinite; }
 .animate-particle { animation: particleFloat 6s ease-in-out infinite; }
 .animate-orb { animation: orbFloat 8s ease-in-out infinite; }
+
+/* Pulse soft */
+.animate-pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Fade in up */
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade in */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
