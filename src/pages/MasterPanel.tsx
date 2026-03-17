@@ -501,21 +501,20 @@ const MasterPanel = () => {
 
       {/* Tabs */}
       <div className="px-4 sm:px-6 mt-5 mb-6">
-        <div className="flex gap-1.5 overflow-x-auto pb-2">
+        <nav className="flex gap-1.5 overflow-x-auto pb-2" role="tablist" aria-label="Master panel sections">
           {TABS.map(t => {
             const Icon = t.icon;
             const isActive = tab === t.id;
-            // Hide admin-only tabs from monitor role
             if (t.id === 'admins' && role === 'monitor') return null;
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'text-primary border border-primary/30 bg-primary/10' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
+              <button key={t.id} role="tab" aria-selected={isActive} onClick={() => { setTab(t.id); setSelectedPanel(null); }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 shadow-[0_0_16px_-4px_hsl(265_72%_58%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}
               >
-                <Icon className="w-4 h-4" /> {t.label}
+                <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} /> {t.label}
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
 
       <div className="px-4 sm:px-6">
@@ -524,10 +523,26 @@ const MasterPanel = () => {
           <div className="space-y-5 animate-in">
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">TOTAL PANELS</p><p className="text-2xl font-extrabold text-accent">{panels.length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ACTIVE</p><p className="text-2xl font-extrabold text-success">{panels.filter(p => p.is_active).length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">DISABLED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => !p.is_active).length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p></div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-accent/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-accent/8 blur-xl group-hover:bg-accent/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">TOTAL PANELS</p>
+                <p className="text-2xl font-extrabold text-accent">{panels.length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-success/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-success/8 blur-xl group-hover:bg-success/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ACTIVE</p>
+                <p className="text-2xl font-extrabold text-success">{panels.filter(p => p.is_active).length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-destructive/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-destructive/8 blur-xl group-hover:bg-destructive/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">DISABLED</p>
+                <p className="text-2xl font-extrabold text-destructive">{panels.filter(p => !p.is_active).length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-destructive/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-destructive/8 blur-xl group-hover:bg-destructive/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p>
+                <p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p>
+              </div>
             </div>
 
             {/* Create Button - canManage (full + limited) */}
@@ -764,26 +779,39 @@ const MasterPanel = () => {
         {tab === 'broadcasts' && (
           <div className="space-y-5 animate-in">
             {canSendBroadcast ? (
-              <div className="glass-admin p-5 space-y-4 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
-                <h3 className="font-bold text-sm flex items-center gap-2"><SendIcon className="w-4 h-4 text-accent" /> Send Broadcast</h3>
+              <div className="glass-admin p-6 space-y-5 relative overflow-hidden shimmer-overlay">
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent" />
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-accent/5 blur-[80px]" />
+                
+                <h3 className="font-bold text-base flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                    <SendIcon className="w-4 h-4 text-accent" />
+                  </div>
+                  Send Broadcast
+                </h3>
+                
                 <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TARGET</label>
+                  <label className="text-[10px] font-semibold text-accent/70 tracking-[0.2em] mb-2 block flex items-center gap-1.5">
+                    <Globe className="w-3 h-3" /> TARGET
+                  </label>
                   <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
-                    <option value="all">All Panels (Global)</option>
-                    {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
+                    <option value="all">🌐 All Panels (Global)</option>
+                    {panels.map(p => <option key={p.id} value={p.id}>📋 {p.panel_name}</option>)}
                   </select>
                 </div>
+                
                 <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">TITLE</label>
+                  <label className="text-[10px] font-semibold text-accent/70 tracking-[0.2em] mb-2 block">TITLE</label>
                   <input value={bcTitle} onChange={e => setBcTitle(e.target.value)} placeholder="e.g., Maintenance Notice" className="input-admin w-full text-sm" />
                 </div>
+                
                 <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground tracking-wider mb-1.5 block">MESSAGE</label>
-                  <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[80px] resize-y text-sm" />
+                  <label className="text-[10px] font-semibold text-accent/70 tracking-[0.2em] mb-2 block">MESSAGE</label>
+                  <textarea value={bcMessage} onChange={e => setBcMessage(e.target.value)} placeholder="Enter broadcast message..." className="input-admin w-full min-h-[100px] resize-y text-sm leading-relaxed" />
                 </div>
-                <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2 text-sm">
-                  {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send
+                
+                <button onClick={sendBroadcast} disabled={bcSending || !bcTitle.trim() || !bcMessage.trim()} className="btn-admin flex items-center gap-2.5 text-sm px-6">
+                  {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />} Send Broadcast
                 </button>
               </div>
             ) : (
@@ -793,33 +821,42 @@ const MasterPanel = () => {
               </div>
             )}
 
-            <div className="glass-admin p-5">
-              <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Broadcast History ({broadcasts.length})</h3>
+            <div className="glass-admin p-6 relative overflow-hidden">
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full bg-primary/5 blur-[60px]" />
+              <h3 className="font-bold text-base flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                Broadcast History
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-mono border border-primary/15">{broadcasts.length}</span>
+              </h3>
               {broadcasts.length === 0 ? (
-                <div className="text-center py-8">
-                  <SendIcon className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                <div className="text-center py-10">
+                  <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-3">
+                    <SendIcon className="w-6 h-6 text-muted-foreground/20" />
+                  </div>
                   <p className="text-muted-foreground text-sm">No broadcasts sent yet</p>
                 </div>
               ) : (
-                <div className="space-y-2.5">
-                  {broadcasts.map(b => (
-                    <div key={b.id} className="glass p-4 hover:border-primary/20 transition-all group">
+                <div className="space-y-3">
+                  {broadcasts.map((b, i) => (
+                    <div key={b.id} className="glass p-4 hover:border-primary/20 transition-all group animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-primary text-sm">{b.title}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border border-primary/15 bg-primary/5 text-primary/80">
-                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : 'Global'}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
+                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : '🌐 Global'}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
-                          <p className="text-[10px] text-muted-foreground/40 mt-2">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
+                          <p className="text-[10px] text-muted-foreground/40 mt-2 font-mono">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
                         </div>
                         {canDelete && (
                           <button
                             onClick={() => deleteBroadcast(b.id)}
                             className="p-2 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
-                            title="Delete broadcast"
+                            aria-label="Delete broadcast"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

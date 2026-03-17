@@ -185,21 +185,24 @@ const SubAdminPanel = () => {
       {panelId && <AlertBanner panelId={panelId} />}
 
       {/* Header */}
-      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0">
+      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 shimmer-overlay">
         <div className="flex items-center gap-3">
-          <CFMSLogo size={36} className="ring-2 ring-accent/20" />
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-xl bg-accent/15 blur-md animate-glow-admin" />
+            <CFMSLogo size={36} className="relative ring-2 ring-accent/20" />
+          </div>
           <div>
             <span className="font-bold text-lg leading-none">{panel?.panel_name}</span>
-            <span className="ml-2 text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full border border-accent/25 font-semibold tracking-wider align-middle">ADMIN</span>
+            <span className="ml-2 text-[10px] bg-gradient-to-r from-accent/20 to-accent/10 text-accent px-2.5 py-0.5 rounded-full border border-accent/25 font-semibold tracking-wider align-middle">ADMIN</span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="hidden sm:flex items-center gap-1.5 mr-2">
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-full bg-success/8 border border-success/15">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span className="text-[10px] text-success font-medium">ONLINE</span>
+            <span className="text-[10px] text-success font-medium tracking-wider">ONLINE</span>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all">
-            <LogOut className="w-4 h-4" /><span className="hidden sm:inline">Logout</span>
+          <button onClick={handleLogout} aria-label="Log out" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-sm transition-all group">
+            <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /><span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </header>
@@ -212,8 +215,8 @@ const SubAdminPanel = () => {
             const isActive = tab === t.id;
             return (
               <button key={t.id} role="tab" aria-selected={isActive} aria-controls={`tabpanel-${t.id}`} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50'}`}>
-                <Icon className="w-4 h-4" /> {t.label}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50 hover:border-border/30'}`}>
+                <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} /> {t.label}
               </button>
             );
           })}
