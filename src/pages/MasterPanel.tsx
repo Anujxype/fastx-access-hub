@@ -523,10 +523,26 @@ const MasterPanel = () => {
           <div className="space-y-5 animate-in">
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">TOTAL PANELS</p><p className="text-2xl font-extrabold text-accent">{panels.length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ACTIVE</p><p className="text-2xl font-extrabold text-success">{panels.filter(p => p.is_active).length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">DISABLED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => !p.is_active).length}</p></div>
-              <div className="glass-admin p-3.5"><p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p><p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p></div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-accent/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-accent/8 blur-xl group-hover:bg-accent/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">TOTAL PANELS</p>
+                <p className="text-2xl font-extrabold text-accent">{panels.length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-success/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-success/8 blur-xl group-hover:bg-success/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">ACTIVE</p>
+                <p className="text-2xl font-extrabold text-success">{panels.filter(p => p.is_active).length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-destructive/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-destructive/8 blur-xl group-hover:bg-destructive/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">DISABLED</p>
+                <p className="text-2xl font-extrabold text-destructive">{panels.filter(p => !p.is_active).length}</p>
+              </div>
+              <div className="glass-admin p-4 relative overflow-hidden group hover:border-destructive/20 transition-all">
+                <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-destructive/8 blur-xl group-hover:bg-destructive/15 transition-all" />
+                <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">EXPIRED</p>
+                <p className="text-2xl font-extrabold text-destructive">{panels.filter(p => p.expiry_date && new Date(p.expiry_date) < new Date()).length}</p>
+              </div>
             </div>
 
             {/* Create Button - canManage (full + limited) */}
