@@ -71,7 +71,7 @@ const PanelPortal = () => {
       });
       setResult(data);
     } catch (err: unknown) {
-      setError(err.message || 'Request failed');
+      setError(err instanceof Error ? err.message : 'Request failed');
       const geo = await getGeoInfo();
       await supabase.from('api_logs').insert({
         key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
