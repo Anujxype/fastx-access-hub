@@ -50,7 +50,7 @@ const Portal = () => {
         ip_address: geo.ip, location: geo.location,
       });
       setResult(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Request failed');
       const geo = await getGeoInfo();
       await supabase.from('api_logs').insert({
