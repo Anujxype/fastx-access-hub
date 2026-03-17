@@ -96,7 +96,7 @@ const Portal = () => {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+          <button aria-label="User profile" className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
             <User className="w-4 h-4" />
           </button>
           <button onClick={handleLogout} className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
