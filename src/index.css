@@ -234,6 +234,29 @@
     background: hsl(240 14% 13% / 0.8);
   }
 
+  /* Styled selects */
+  select.input-admin,
+  select.input-glass {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239b87f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+  }
+  select.input-admin:hover,
+  select.input-glass:hover {
+    border-color: hsl(38 92% 50% / 0.35);
+    background-color: hsl(240 14% 13% / 0.75);
+  }
+  select.input-admin option,
+  select.input-glass option {
+    background: hsl(240 16% 9%);
+    color: hsl(240 10% 92%);
+    padding: 8px 12px;
+  }
+
   /* Tab pills */
   .tab-pill {
     @apply flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium cursor-pointer;
