@@ -805,33 +805,42 @@ const MasterPanel = () => {
               </div>
             )}
 
-            <div className="glass-admin p-5">
-              <h3 className="font-bold text-sm flex items-center gap-2 mb-4"><SendIcon className="w-4 h-4 text-accent" /> Broadcast History ({broadcasts.length})</h3>
+            <div className="glass-admin p-6 relative overflow-hidden">
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full bg-primary/5 blur-[60px]" />
+              <h3 className="font-bold text-base flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                Broadcast History
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/70 font-mono border border-primary/15">{broadcasts.length}</span>
+              </h3>
               {broadcasts.length === 0 ? (
-                <div className="text-center py-8">
-                  <SendIcon className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                <div className="text-center py-10">
+                  <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-3">
+                    <SendIcon className="w-6 h-6 text-muted-foreground/20" />
+                  </div>
                   <p className="text-muted-foreground text-sm">No broadcasts sent yet</p>
                 </div>
               ) : (
-                <div className="space-y-2.5">
-                  {broadcasts.map(b => (
-                    <div key={b.id} className="glass p-4 hover:border-primary/20 transition-all group">
+                <div className="space-y-3">
+                  {broadcasts.map((b, i) => (
+                    <div key={b.id} className="glass p-4 hover:border-primary/20 transition-all group animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-primary text-sm">{b.title}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border border-primary/15 bg-primary/5 text-primary/80">
-                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : 'Global'}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
+                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : '🌐 Global'}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
-                          <p className="text-[10px] text-muted-foreground/40 mt-2">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
+                          <p className="text-[10px] text-muted-foreground/40 mt-2 font-mono">{format(new Date(b.created_at), 'dd MMM yyyy • HH:mm')}</p>
                         </div>
                         {canDelete && (
                           <button
                             onClick={() => deleteBroadcast(b.id)}
                             className="p-2 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
-                            title="Delete broadcast"
+                            aria-label="Delete broadcast"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
