@@ -63,8 +63,8 @@ const PanelLanding = () => {
       localStorage.setItem("cfms_panel_id", panel.id);
 
       navigate(`/${slug}/portal`);
-    } catch (err: any) {
-      setError(err.message || "Connection error");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Connection error");
     } finally {
       setLoginLoading(false);
     }

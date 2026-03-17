@@ -29,8 +29,10 @@ const Portal = () => {
 
   useEffect(() => {
     if (!localStorage.getItem('cfms_key')) { navigate('/'); return; }
-    const bc = localStorage.getItem('cfms_broadcast');
-    if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('cfms_broadcast'); }
+    try {
+      const bc = localStorage.getItem('cfms_broadcast');
+      if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('cfms_broadcast'); }
+    } catch { /* ignore malformed broadcast data */ }
     fetchAllEndpoints().then(setAllEndpoints);
   }, [navigate]);
 
@@ -48,8 +50,8 @@ const Portal = () => {
         ip_address: geo.ip, location: geo.location,
       });
       setResult(data);
-    } catch (err: any) {
-      setError(err.message || 'Request failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Request failed');
       const geo = await getGeoInfo();
       await supabase.from('api_logs').insert({
         key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
@@ -94,10 +96,10 @@ const Portal = () => {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+          <button aria-label="User profile" className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
             <User className="w-4 h-4" />
           </button>
-          <button onClick={handleLogout} className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
+          <button onClick={handleLogout} aria-label="Log out" className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
             <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </div>

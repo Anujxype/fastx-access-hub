@@ -9,8 +9,8 @@ import AlertBanner from '@/components/AlertBanner';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
-  Key, FileText, BarChart3, Heart, ClipboardCheck, Send as SendIcon,
-  LogOut, Bell, Shield, Loader2, Lock, ArrowLeft, ArrowRight,
+  Key, FileText, BarChart3, Heart, ClipboardCheck,
+  LogOut, Shield, Loader2, Lock, ArrowLeft,
   Activity, Server, Database, Globe, ShieldOff,
   WifiOff
 } from 'lucide-react';

@@ -70,8 +70,8 @@ const PanelPortal = () => {
         panel_id: panel.id, ip_address: geo.ip, location: geo.location,
       });
       setResult(data);
-    } catch (err: any) {
-      setError(err.message || 'Request failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Request failed');
       const geo = await getGeoInfo();
       await supabase.from('api_logs').insert({
         key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
@@ -121,7 +121,7 @@ const PanelPortal = () => {
             Portal
           </span>
         </div>
-        <button onClick={handleLogout} className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
+        <button onClick={handleLogout} aria-label="Log out" className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
           <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </header>

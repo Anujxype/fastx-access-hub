@@ -45,8 +45,8 @@ const Login = () => {
         }
       }
       navigate('/portal');
-    } catch (err: any) {
-      setError(err.message || 'Connection error');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Connection error');
     } finally {
       setLoading(false);
     }
