@@ -84,6 +84,8 @@ export const ENDPOINTS = [
   { endpoint: '/vehicle', param: 'registration', label: 'Vehicle Lookup', icon: 'Car' },
   { endpoint: '/v2', param: 'query', label: 'General Query', icon: 'Search' },
   { endpoint: '/pan', param: 'pan', label: 'PAN Lookup', icon: 'FileCheck' },
+  { endpoint: '/gas', param: 'num', label: 'Gas Connection Lookup', icon: 'Flame' },
+  { endpoint: '/fastag', param: 'vrn', label: 'FASTag Lookup', icon: 'Truck' },
 ];
 
 export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
