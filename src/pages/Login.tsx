@@ -31,19 +31,21 @@ const Login = () => {
       if (!data) { setError('Invalid or inactive access key'); setLoading(false); return; }
       if (data.expires_at && new Date(data.expires_at) < new Date()) { setError('This key has expired'); setLoading(false); return; }
 
-      await supabase.from('api_keys').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id);
       localStorage.setItem('cfms_key', data.key_value);
       localStorage.setItem('cfms_key_name', data.name);
       localStorage.setItem('cfms_key_id', data.id);
 
-      const { data: broadcasts } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(1);
-      if (broadcasts && broadcasts.length > 0) {
-        const lastSeen = localStorage.getItem('cfms_last_broadcast');
-        if (lastSeen !== broadcasts[0].id) {
-          localStorage.setItem('cfms_broadcast', JSON.stringify(broadcasts[0]));
-          localStorage.setItem('cfms_last_broadcast', broadcasts[0].id);
+      // Fire-and-forget: don't block navigation on these
+      supabase.from('api_keys').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id).then(() => {});
+      supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(1).then(({ data: broadcasts }) => {
+        if (broadcasts && broadcasts.length > 0) {
+          const lastSeen = localStorage.getItem('cfms_last_broadcast');
+          if (lastSeen !== broadcasts[0].id) {
+            localStorage.setItem('cfms_broadcast', JSON.stringify(broadcasts[0]));
+            localStorage.setItem('cfms_last_broadcast', broadcasts[0].id);
+          }
         }
-      }
+      });
       navigate('/portal');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Connection error');
