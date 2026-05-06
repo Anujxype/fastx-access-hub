@@ -93,7 +93,7 @@ export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
 export const AVAILABLE_ICONS = [
   'Smartphone', 'Fingerprint', 'Mail', 'FileText', 'Send', 'Building2',
   'CreditCard', 'Wallet', 'CircleDollarSign', 'Car', 'Search', 'FileCheck',
-  'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
+  'Flame', 'Truck', 'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
 ];
 
 export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
