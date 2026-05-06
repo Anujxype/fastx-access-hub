@@ -845,8 +845,9 @@ const MasterPanel = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-primary text-sm">{b.title}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
-                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : '🌐 Global'}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
+                              <Globe className="w-2.5 h-2.5" />
+                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : 'Global'}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
