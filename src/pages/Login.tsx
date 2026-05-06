@@ -71,9 +71,10 @@ const Login = () => {
             <div className="absolute -inset-8 rounded-3xl bg-primary/5 blur-3xl" />
             <CFMSLogo size={88} />
           </div>
-          <h1 className="text-5xl font-black tracking-tight mb-3">
+          <h1 className="text-5xl font-black tracking-tight mb-2">
             <span className="text-gradient-primary">DRMS</span>
           </h1>
+          <p className="text-xs text-muted-foreground/80 tracking-wide mb-2">Debt Recovery Management System</p>
           <div className="flex items-center gap-3 mt-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/40" />
             <p className="text-muted-foreground text-[11px] tracking-[0.3em] flex items-center gap-2">
