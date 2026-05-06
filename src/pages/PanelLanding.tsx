@@ -172,7 +172,7 @@ const PanelLanding = () => {
             <span>ENCRYPTED</span>
           </div>
           <div className="h-3 w-px bg-muted-foreground/10" />
-          <p className="text-muted-foreground/30 text-[10px] tracking-[0.15em]">CFMS PROTOCOL</p>
+          <p className="text-muted-foreground/30 text-[10px] tracking-[0.15em]">DRMS PROTOCOL</p>
         </div>
       </div>
     </PanelLandingScaffold>

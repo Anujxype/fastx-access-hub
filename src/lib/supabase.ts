@@ -84,6 +84,8 @@ export const ENDPOINTS = [
   { endpoint: '/vehicle', param: 'registration', label: 'Vehicle Lookup', icon: 'Car' },
   { endpoint: '/v2', param: 'query', label: 'General Query', icon: 'Search' },
   { endpoint: '/pan', param: 'pan', label: 'PAN Lookup', icon: 'FileCheck' },
+  { endpoint: '/gas', param: 'num', label: 'Gas Connection Lookup', icon: 'Flame' },
+  { endpoint: '/fastag', param: 'vrn', label: 'FASTag Lookup', icon: 'Truck' },
 ];
 
 export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
@@ -91,7 +93,7 @@ export const ALL_ENDPOINT_PATHS = ENDPOINTS.map(e => e.endpoint);
 export const AVAILABLE_ICONS = [
   'Smartphone', 'Fingerprint', 'Mail', 'FileText', 'Send', 'Building2',
   'CreditCard', 'Wallet', 'CircleDollarSign', 'Car', 'Search', 'FileCheck',
-  'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
+  'Flame', 'Truck', 'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
 ];
 
 export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
@@ -124,7 +126,7 @@ export function generateLicenseKey(): string {
     }
     segments.push(seg);
   }
-  return 'CFMS-' + segments.join('-');
+  return 'DRMS-' + segments.join('-');
 }
 
 export function getDeviceInfo(): string {

@@ -7,7 +7,7 @@ const CFMSLogo = React.forwardRef<HTMLImageElement, { size?: number; className?:
       <img
         ref={ref}
         src={logoImg}
-        alt="CFMS Logo"
+        alt="DRMS Logo"
         width={size}
         height={size}
         className={`rounded-xl object-cover ${className}`}

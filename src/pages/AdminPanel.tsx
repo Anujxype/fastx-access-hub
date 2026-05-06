@@ -77,7 +77,7 @@ const AdminPanel = () => {
         <div className="flex items-center gap-3">
           <CFMSLogo size={36} className="ring-2 ring-accent/20" />
           <div>
-            <span className="font-bold text-lg leading-none">CFMS</span>
+            <span className="font-bold text-lg leading-none">DRMS</span>
             <span className="ml-2 text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full border border-accent/25 font-semibold tracking-wider align-middle">ADMIN</span>
           </div>
         </div>

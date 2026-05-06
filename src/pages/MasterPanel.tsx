@@ -376,7 +376,7 @@ const MasterPanel = () => {
         <div className="flex items-center gap-3">
           <CFMSLogo size={36} className="ring-2 ring-primary/20" />
           <div>
-            <span className="font-bold text-lg leading-none">CFMS</span>
+            <span className="font-bold text-lg leading-none">DRMS</span>
             {role && <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
           </div>
         </div>
@@ -795,8 +795,8 @@ const MasterPanel = () => {
                     <Globe className="w-3 h-3" /> TARGET
                   </label>
                   <select value={bcTarget} onChange={e => setBcTarget(e.target.value)} className="input-admin w-full text-sm">
-                    <option value="all">🌐 All Panels (Global)</option>
-                    {panels.map(p => <option key={p.id} value={p.id}>📋 {p.panel_name}</option>)}
+                    <option value="all">All Panels (Global)</option>
+                    {panels.map(p => <option key={p.id} value={p.id}>{p.panel_name}</option>)}
                   </select>
                 </div>
                 
@@ -845,8 +845,9 @@ const MasterPanel = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-bold text-primary text-sm">{b.title}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
-                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : '🌐 Global'}
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 ${b.target_panel_id ? 'border-accent/20 bg-accent/8 text-accent/80' : 'border-primary/15 bg-primary/5 text-primary/80'}`}>
+                              <Globe className="w-2.5 h-2.5" />
+                              {b.target_panel_id ? panels.find(p => p.id === b.target_panel_id)?.panel_name || 'Targeted' : 'Global'}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">{b.message}</p>
