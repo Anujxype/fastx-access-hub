@@ -4,13 +4,13 @@ import { supabase, API_BASE, ENDPOINTS, fetchAllEndpoints, getDeviceInfo, getGeo
 import CFMSLogo from '@/components/CFMSLogo';
 import {
   Smartphone, Fingerprint, Mail, FileText, Send, Building2,
-  CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck,
+  CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck, Flame, Truck,
   LogOut, User, Loader2, Zap, X, Terminal, Copy, Check, ChevronRight, Activity
 } from 'lucide-react';
 
 const iconMap: Record<string, any> = {
   Smartphone, Fingerprint, Mail, FileText, Send, Building2,
-  CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck,
+  CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck, Flame, Truck,
 };
 
 const Portal = () => {
