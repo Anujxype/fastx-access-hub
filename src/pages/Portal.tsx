@@ -77,60 +77,81 @@ const Portal = () => {
   };
 
   return (
-    <div className="min-h-screen pb-8 relative">
+    <div className="min-h-screen pb-12 relative">
       <div className="fixed inset-0 dot-grid opacity-20 pointer-events-none" />
+      <div className="fixed top-0 -left-32 w-96 h-96 rounded-full bg-primary/[0.04] blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-0 -right-32 w-96 h-96 rounded-full bg-accent/[0.03] blur-[120px] pointer-events-none" />
 
-      <header className="glass-strong sticky top-0 z-50 px-4 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 animate-in">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 animate-in">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative flex-shrink-0">
             <div className="absolute -inset-1 rounded-lg bg-primary/15 blur-md" />
             <CFMSLogo size={32} className="relative" />
           </div>
-          <div>
-            <span className="font-bold text-base block leading-tight">{keyName}</span>
+          <div className="min-w-0">
+            <span className="font-bold text-sm sm:text-base block leading-tight truncate max-w-[140px] sm:max-w-none">{keyName}</span>
             <span className="text-[9px] text-muted-foreground tracking-wider">ACTIVE SESSION</span>
           </div>
-          <span className="text-[10px] bg-primary/15 text-primary px-2.5 py-1 rounded-full border border-primary/25 font-semibold tracking-wider ml-1">
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="hidden sm:inline-flex text-[10px] bg-primary/15 text-primary px-2.5 py-1 rounded-full border border-primary/25 font-semibold tracking-wider items-center">
             <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block mr-1.5 animate-pulse" />
             Portal
           </span>
-        </div>
-        <div className="flex items-center gap-1.5">
           <button aria-label="User profile" className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
             <User className="w-4 h-4" />
           </button>
-          <button onClick={handleLogout} aria-label="Log out" className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
+          <button onClick={handleLogout} aria-label="Log out" className="p-2 sm:px-3 sm:py-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group inline-flex items-center gap-1.5">
             <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <span className="hidden sm:inline text-xs font-semibold">Logout</span>
           </button>
         </div>
       </header>
 
-      {broadcast && (
-        <div className="mx-4 mt-4 glass-admin p-4 animate-fade-in relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-accent/0 via-accent to-accent/0" />
-          <button onClick={() => setBroadcast(null)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Activity className="w-4 h-4 text-accent" />
-            </div>
-            <div>
-              <h3 className="font-bold text-accent mb-1 text-sm">{broadcast.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{broadcast.message}</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
+        {broadcast && (
+          <div className="glass-admin p-4 mb-5 animate-fade-in relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-accent/0 via-accent to-accent/0" />
+            <button onClick={() => setBroadcast(null)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Activity className="w-4 h-4 text-accent" />
+              </div>
+              <div className="pr-6">
+                <h3 className="font-bold text-accent mb-1 text-sm">{broadcast.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{broadcast.message}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="px-4 mt-6 relative z-10">
-        <h2 className="text-xs font-semibold text-primary tracking-[0.25em] mb-5 flex items-center gap-2.5 animate-in">
+        {/* Secure Session banner */}
+        <div className="glass p-4 mb-6 animate-fade-in-up flex items-center justify-between gap-3 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-success/5 via-transparent to-transparent pointer-events-none" />
+          <div className="flex items-center gap-3 min-w-0 relative">
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight">Secure Session Active</p>
+              <p className="text-[11px] text-muted-foreground truncate">{getDeviceInfo()} • {navigator.platform || 'Web'} • {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex w-9 h-9 rounded-lg bg-success/10 border border-success/20 items-center justify-center flex-shrink-0 relative">
+            <Activity className="w-4 h-4 text-success" />
+          </div>
+        </div>
+
+        <h2 className="text-xs font-semibold text-primary tracking-[0.25em] mb-4 flex items-center gap-2.5 animate-in">
           <Zap className="w-3.5 h-3.5" />
           SELECT ENDPOINT
           <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent ml-2" />
         </h2>
 
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
           {allEndpoints.map((ep, i) => {
             const Icon = iconMap[ep.icon] || Search;
             const isActive = selectedEndpoint?.endpoint === ep.endpoint;
