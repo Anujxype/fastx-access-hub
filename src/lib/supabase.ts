@@ -126,7 +126,7 @@ export function generateLicenseKey(): string {
     }
     segments.push(seg);
   }
-  return 'CFMS-' + segments.join('-');
+  return 'DRMS-' + segments.join('-');
 }
 
 export function getDeviceInfo(): string {

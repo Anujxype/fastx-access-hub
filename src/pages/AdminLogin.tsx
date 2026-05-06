@@ -44,7 +44,7 @@ const AdminLogin = () => {
             <div className="absolute -inset-8 rounded-full bg-accent/5 blur-3xl" />
             <CFMSLogo size={80} className="ring-2 ring-accent/30 shadow-[0_0_40px_-8px_hsl(38_92%_50%/0.3)] animate-float" />
           </div>
-          <h1 className="text-3xl font-black tracking-tight">CFMS Admin</h1>
+          <h1 className="text-3xl font-black tracking-tight">DRMS Admin</h1>
           <div className="flex items-center gap-3 mt-3">
             <div className="h-px w-6 bg-gradient-to-r from-transparent to-accent/40" />
             <p className="text-muted-foreground text-[11px] tracking-[0.25em] flex items-center gap-2">

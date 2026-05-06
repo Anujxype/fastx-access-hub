@@ -376,7 +376,7 @@ const MasterPanel = () => {
         <div className="flex items-center gap-3">
           <CFMSLogo size={36} className="ring-2 ring-primary/20" />
           <div>
-            <span className="font-bold text-lg leading-none">CFMS</span>
+            <span className="font-bold text-lg leading-none">DRMS</span>
             {role && <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wider align-middle border ${ROLE_BADGE[role].color}`}>{ROLE_BADGE[role].label}</span>}
           </div>
         </div>

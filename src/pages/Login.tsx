@@ -72,7 +72,7 @@ const Login = () => {
             <CFMSLogo size={88} />
           </div>
           <h1 className="text-5xl font-black tracking-tight mb-3">
-            <span className="text-gradient-primary">CFMS</span>
+            <span className="text-gradient-primary">DRMS</span>
           </h1>
           <div className="flex items-center gap-3 mt-2">
             <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/40" />
@@ -146,7 +146,7 @@ const Login = () => {
           </div>
           <div className="h-3 w-px bg-muted-foreground/10" />
           <p className="text-muted-foreground/30 text-[10px] tracking-[0.15em]">
-            CFMS SECURITY PROTOCOL
+            DRMS SECURITY PROTOCOL
           </p>
           <div className="h-3 w-px bg-muted-foreground/10" />
           <div className="flex items-center gap-1.5 text-muted-foreground/30 text-[10px]">
