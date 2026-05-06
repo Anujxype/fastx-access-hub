@@ -101,33 +101,55 @@ const PanelPortal = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="min-h-screen pb-8 relative">
+    <div className="min-h-screen pb-12 relative">
       <div className="fixed inset-0 dot-grid opacity-20 pointer-events-none" />
+      <div className="fixed top-0 -left-32 w-96 h-96 rounded-full bg-primary/[0.04] blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-0 -right-32 w-96 h-96 rounded-full bg-accent/[0.03] blur-[120px] pointer-events-none" />
 
       {panel && <AlertBanner panelId={panel.id} />}
 
-      <header className="glass-strong sticky top-0 z-50 px-4 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 animate-in">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0 animate-in">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative flex-shrink-0">
             <div className="absolute -inset-1 rounded-lg bg-primary/15 blur-md" />
             <CFMSLogo size={32} className="relative" />
           </div>
-          <div>
-            <span className="font-bold text-base block leading-tight">{panel?.panel_name} — {keyName}</span>
+          <div className="min-w-0">
+            <span className="font-bold text-sm sm:text-base block leading-tight truncate max-w-[180px] sm:max-w-none">{panel?.panel_name} — {keyName}</span>
             <span className="text-[9px] text-muted-foreground tracking-wider">PORTAL SESSION</span>
           </div>
-          <span className="text-[10px] bg-primary/15 text-primary px-2.5 py-1 rounded-full border border-primary/25 font-semibold tracking-wider ml-1">
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="hidden sm:inline-flex text-[10px] bg-primary/15 text-primary px-2.5 py-1 rounded-full border border-primary/25 font-semibold tracking-wider items-center">
             <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block mr-1.5 animate-pulse" />
             Portal
           </span>
+          <button onClick={handleLogout} aria-label="Log out" className="p-2 sm:px-3 sm:py-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group inline-flex items-center gap-1.5">
+            <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <span className="hidden sm:inline text-xs font-semibold">Logout</span>
+          </button>
         </div>
-        <button onClick={handleLogout} aria-label="Log out" className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all group">
-          <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-        </button>
       </header>
 
-      <div className="px-4 mt-6 relative z-10">
-        <h2 className="text-xs font-semibold text-primary tracking-[0.25em] mb-5 flex items-center gap-2.5 animate-in">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
+        <div className="glass p-4 mb-6 animate-fade-in-up flex items-center justify-between gap-3 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-success/5 via-transparent to-transparent pointer-events-none" />
+          <div className="flex items-center gap-3 min-w-0 relative">
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight">Secure Session Active</p>
+              <p className="text-[11px] text-muted-foreground truncate">{getDeviceInfo()} • {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex w-9 h-9 rounded-lg bg-success/10 border border-success/20 items-center justify-center flex-shrink-0">
+            <Activity className="w-4 h-4 text-success" />
+          </div>
+        </div>
+
+        <h2 className="text-xs font-semibold text-primary tracking-[0.25em] mb-4 flex items-center gap-2.5 animate-in">
           <Zap className="w-3.5 h-3.5" />
           SELECT ENDPOINT
           <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent ml-2" />
@@ -138,7 +160,7 @@ const PanelPortal = () => {
             <p className="text-muted-foreground">No endpoints enabled for this panel.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
             {filteredEndpoints.map((ep, i) => {
               const Icon = iconMap[ep.icon] || Search;
               const isActive = selectedEndpoint?.endpoint === ep.endpoint;
