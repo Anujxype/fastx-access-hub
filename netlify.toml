@@ -1,3 +1,20 @@
+[build]
+  command  = "npm run build"
+  publish  = "dist"
+
+# Hashed build assets are immutable — long-cache them so repeat visits skip
+# the network entirely.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# index.html must always revalidate (SPA shell with new hashed asset URLs).
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

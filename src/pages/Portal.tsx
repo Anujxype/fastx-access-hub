@@ -39,25 +39,31 @@ const Portal = () => {
   const handleSearch = async () => {
     if (!selectedEndpoint || !query.trim()) return;
     setLoading(true); setError(''); setResult(null);
+    const ep = selectedEndpoint.endpoint;
+    const q = query.trim();
+    const url = `${API_BASE}${ep}?${selectedEndpoint.param}=${encodeURIComponent(q)}`;
     try {
-      const url = `${API_BASE}${selectedEndpoint.endpoint}?${selectedEndpoint.param}=${encodeURIComponent(query.trim())}`;
-      const [res, geo] = await Promise.all([fetch(url), getGeoInfo()]);
+      // Only the actual upstream call gates the UI. Geo lookup + log insert
+      // happen after we've already shown the result so the user doesn't pay
+      // for the (up to 4 s) ipapi round-trip on every search.
+      const res = await fetch(url);
       const data = await res.json();
-      await supabase.from('api_logs').insert({
-        key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
-        query: query.trim(), status: res.ok ? 'success' : 'error',
+      setResult(data);
+      const status = res.ok ? 'success' : 'error';
+      void getGeoInfo().then(geo => supabase.from('api_logs').insert({
+        key_id: keyId, key_name: keyName, endpoint: ep,
+        query: q, status,
         device: getDeviceInfo(), user_agent: navigator.userAgent,
         ip_address: geo.ip, location: geo.location,
-      });
-      setResult(data);
+      }));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Request failed');
-      const geo = await getGeoInfo();
-      await supabase.from('api_logs').insert({
-        key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
-        query: query.trim(), status: 'error', device: getDeviceInfo(), user_agent: navigator.userAgent,
+      void getGeoInfo().then(geo => supabase.from('api_logs').insert({
+        key_id: keyId, key_name: keyName, endpoint: ep,
+        query: q, status: 'error',
+        device: getDeviceInfo(), user_agent: navigator.userAgent,
         ip_address: geo.ip, location: geo.location,
-      });
+      }));
     } finally { setLoading(false); }
   };
 

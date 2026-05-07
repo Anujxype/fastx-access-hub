@@ -59,25 +59,29 @@ const PanelPortal = () => {
   const handleSearch = async () => {
     if (!selectedEndpoint || !query.trim() || !panel) return;
     setSearchLoading(true); setError(''); setResult(null);
+    const ep = selectedEndpoint.endpoint;
+    const q = query.trim();
+    const url = `${API_BASE}${ep}?${selectedEndpoint.param}=${encodeURIComponent(q)}`;
+    const pid = panel.id;
     try {
-      const url = `${API_BASE}${selectedEndpoint.endpoint}?${selectedEndpoint.param}=${encodeURIComponent(query.trim())}`;
-      const [res, geo] = await Promise.all([fetch(url), getGeoInfo()]);
+      const res = await fetch(url);
       const data = await res.json();
-      await supabase.from('api_logs').insert({
-        key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
-        query: query.trim(), status: res.ok ? 'success' : 'error',
-        device: getDeviceInfo(), user_agent: navigator.userAgent,
-        panel_id: panel.id, ip_address: geo.ip, location: geo.location,
-      });
       setResult(data);
+      const status = res.ok ? 'success' : 'error';
+      void getGeoInfo().then(geo => supabase.from('api_logs').insert({
+        key_id: keyId, key_name: keyName, endpoint: ep,
+        query: q, status,
+        device: getDeviceInfo(), user_agent: navigator.userAgent,
+        panel_id: pid, ip_address: geo.ip, location: geo.location,
+      }));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Request failed');
-      const geo = await getGeoInfo();
-      await supabase.from('api_logs').insert({
-        key_id: keyId, key_name: keyName, endpoint: selectedEndpoint.endpoint,
-        query: query.trim(), status: 'error', device: getDeviceInfo(), user_agent: navigator.userAgent,
-        panel_id: panel.id, ip_address: geo.ip, location: geo.location,
-      });
+      void getGeoInfo().then(geo => supabase.from('api_logs').insert({
+        key_id: keyId, key_name: keyName, endpoint: ep,
+        query: q, status: 'error',
+        device: getDeviceInfo(), user_agent: navigator.userAgent,
+        panel_id: pid, ip_address: geo.ip, location: geo.location,
+      }));
     } finally { setSearchLoading(false); }
   };
 
