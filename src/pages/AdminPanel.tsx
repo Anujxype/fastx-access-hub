@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CFMSLogo from '@/components/CFMSLogo';
-import { supabase, type Broadcast } from '@/lib/supabase';
+import { supabase, checkSupabaseHealth, type Broadcast } from '@/lib/supabase';
 
 // Heavy admin tabs are split out so AdminPanel doesn't pull recharts +
 // the full keys/logs editors on first load.
@@ -44,9 +44,7 @@ const AdminPanel = () => {
     }
     if (tab === 'health') {
       setHealthOk(null);
-      fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
-        headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' }
-      }).then(r => setHealthOk(r.ok)).catch(() => setHealthOk(false));
+      checkSupabaseHealth().then(setHealthOk);
     }
   }, [tab]);
 

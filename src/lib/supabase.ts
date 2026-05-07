@@ -1,9 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://rwmbuxgyynlyusmyaovg.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak';
+export const SUPABASE_URL = 'https://rwmbuxgyynlyusmyaovg.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Lightweight health check used by admin/sub-admin panels.
+// Returns true if the Supabase REST endpoint is reachable within 8s.
+export async function checkSupabaseHealth(timeoutMs = 8000): Promise<boolean> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+      headers: { apikey: SUPABASE_ANON_KEY },
+      signal: controller.signal,
+    });
+    return r.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
 

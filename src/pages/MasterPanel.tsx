@@ -244,14 +244,14 @@ const MasterPanel = () => {
         allowed_endpoints: allPaths,
         is_active: true,
       };
-      console.log('Creating panel:', insertData);
+      if (import.meta.env.DEV) console.log('Creating panel:', insertData);
 
       const { data: created, error } = await supabase.from('managed_panels').insert(insertData).select();
       if (error) {
         console.error('Panel creation error:', error);
         toast({ title: 'Error creating panel', description: error.message, variant: 'destructive' });
       } else {
-        console.log('Panel created successfully:', created);
+        if (import.meta.env.DEV) console.log('Panel created successfully:', created);
         toast({ title: 'Panel Created', description: `URL: /${slug} | License: ${licenseKey}` });
         setNewName(''); setNewPassword('admin123'); setNewExpiry(''); setShowCreate(false);
       }
@@ -398,7 +398,7 @@ const MasterPanel = () => {
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} className="w-7 h-7 rounded-full ring-2 ring-primary/25" alt="" />
+              <img src={user.user_metadata.avatar_url} className="w-7 h-7 rounded-full ring-2 ring-primary/25" alt={`${masterAdmin?.display_name || user?.email || 'User'} avatar`} />
             ) : (
               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary/25">
                 <span className="text-xs font-bold text-primary">
@@ -434,7 +434,7 @@ const MasterPanel = () => {
                             <img
                               src={user.user_metadata.avatar_url}
                               className="relative w-14 h-14 rounded-full ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
-                              alt=""
+                              alt={`${masterAdmin?.display_name || user?.email || 'User'} avatar`}
                             />
                           </div>
                         ) : (

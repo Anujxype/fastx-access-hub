@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     chunkSizeWarningLimit: 800,
+    // Strip console.* and debugger from production bundles. import.meta.env.DEV
+    // checks elsewhere are also resolved by SWC at build time.
+    minify: "esbuild",
     rollupOptions: {
       output: {
         // Split heavy vendor groups into long-cacheable chunks so the
@@ -34,5 +37,10 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+  },
+  esbuild: {
+    // Keep console.error/warn (useful in prod). Strip noisy debug calls.
+    pure: mode === "production" ? ["console.log", "console.debug", "console.info"] : [],
+    drop: mode === "production" ? ["debugger"] : [],
   },
 }));

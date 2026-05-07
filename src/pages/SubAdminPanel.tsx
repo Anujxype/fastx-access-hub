@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase, type ManagedPanel } from '@/lib/supabase';
+import { supabase, checkSupabaseHealth, type ManagedPanel } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import AlertBanner from '@/components/AlertBanner';
 import { toast } from '@/hooks/use-toast';
@@ -110,16 +110,9 @@ const SubAdminPanel = () => {
   useEffect(() => {
     if (tab !== 'health' || !authenticated) return;
     setHealthOk(null);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    fetch('https://rwmbuxgyynlyusmyaovg.supabase.co/rest/v1/', {
-      headers: { apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bWJ1eGd5eW5seXVzbXlhb3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIzMDQsImV4cCI6MjA4ODUyODMwNH0.F9mRsjHY7xTJNCIhzOyB8FGpkgb_XjRP6NcOm59hNak' },
-      signal: controller.signal,
-    })
-      .then(r => setHealthOk(r.ok))
-      .catch(() => setHealthOk(false))
-      .finally(() => clearTimeout(timeout));
-    return () => { controller.abort(); clearTimeout(timeout); };
+    let cancelled = false;
+    checkSupabaseHealth().then(ok => { if (!cancelled) setHealthOk(ok); });
+    return () => { cancelled = true; };
   }, [tab, authenticated]);
 
   const handleLogout = () => {
