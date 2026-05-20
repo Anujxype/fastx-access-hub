@@ -57,27 +57,27 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
       // Cast to ManagedPanel; sensitive fields stay undefined client-side.
       setPanel(row as ManagedPanel);
 
-      const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
-      const isDisabled = !data.is_active || Boolean(expired);
+      const expired = row.expiry_date && new Date(row.expiry_date) < new Date();
+      const isDisabled = !row.is_active || Boolean(expired);
       setDisabled(isDisabled);
 
       // If the panel is disabled/expired, do NOT allow stored sessions to redirect past this page.
       if (isDisabled) {
-        clearPanelSessions(data.id);
+        clearPanelSessions(row.id);
         setLoading(false);
         return;
       }
 
       // Check existing sessions
       try {
-        const storedPortal = localStorage.getItem(`cfms_portal_${data.id}`);
+        const storedPortal = localStorage.getItem(`cfms_portal_${row.id}`);
         if (storedPortal === "true") {
           setRedirectTo(`/${slugLower}/portal`);
           setLoading(false);
           return;
         }
 
-        const storedAdmin = localStorage.getItem(`cfms_panel_${data.id}`);
+        const storedAdmin = localStorage.getItem(`cfms_panel_${row.id}`);
         if (storedAdmin === "true") {
           setRedirectTo(`/${slugLower}/admin`);
           setLoading(false);
