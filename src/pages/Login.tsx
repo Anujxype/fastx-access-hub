@@ -12,7 +12,11 @@ const Login = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem('cfms_key');
-    if (stored) navigate('/portal');
+    // Only redirect to global portal if the key is NOT from a panel-specific login.
+    // Panel logins set cfms_panel_id; letting them bypass here would expose all
+    // endpoints rather than the panel-restricted set.
+    const panelId = localStorage.getItem('cfms_panel_id');
+    if (stored && !panelId) navigate('/portal');
   }, [navigate]);
 
   const handleLogin = async () => {

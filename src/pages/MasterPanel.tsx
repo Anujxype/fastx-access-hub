@@ -101,7 +101,10 @@ const MasterPanel = () => {
       if (error) {
         toast({ title: 'Error loading panels', description: error.message, variant: 'destructive' });
       }
-      setPanels(data || []);
+      const freshPanels = data || [];
+      setPanels(freshPanels);
+      // Keep selectedPanel in sync with the latest DB data
+      setSelectedPanel(prev => prev ? freshPanels.find(p => p.id === prev.id) ?? prev : null);
     } catch (err) {
       toast({ title: 'Network error', description: 'Failed to load panels', variant: 'destructive' });
     }
@@ -680,7 +683,7 @@ const MasterPanel = () => {
                 </div>
                 {canKillSwitch && (
                   <button onClick={() => togglePanel(selectedPanel)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedPanel.is_active ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : 'bg-success/10 text-success hover:bg-success/20'}`}>
-                    {selectedPanel.is_active ? <><ToggleLeft className="w-4 h-4" /> Kill Switch</> : <><ToggleRight className="w-4 h-4" /> Enable</>}
+                    {selectedPanel.is_active ? <><ToggleRight className="w-4 h-4" /> Kill Switch</> : <><ToggleLeft className="w-4 h-4" /> Enable</>}
                   </button>
                 )}
               </div>
