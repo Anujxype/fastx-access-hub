@@ -114,7 +114,14 @@ export const AVAILABLE_ICONS = [
   'Flame', 'Truck', 'Globe', 'Shield', 'User', 'Key', 'Database', 'Server', 'Cpu', 'Hash',
 ];
 
+// Module-level cache so the custom_endpoints query fires only once per app session.
+let _endpointsCache: typeof ENDPOINTS | null = null;
+let _endpointsCacheTime = 0;
+const ENDPOINTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
+  const now = Date.now();
+  if (_endpointsCache && now - _endpointsCacheTime < ENDPOINTS_CACHE_TTL) return _endpointsCache;
   const { data } = await supabase.from('custom_endpoints').select('*').order('created_at', { ascending: true });
   const custom = (data || []).map((ce: CustomEndpoint) => ({
     endpoint: ce.endpoint.startsWith('/') ? ce.endpoint : `/${ce.endpoint}`,
@@ -122,7 +129,15 @@ export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
     label: ce.label,
     icon: ce.icon,
   }));
-  return [...ENDPOINTS, ...custom];
+  _endpointsCache = [...ENDPOINTS, ...custom];
+  _endpointsCacheTime = now;
+  return _endpointsCache;
+}
+
+/** Call after saving/deleting a custom endpoint so the next fetchAllEndpoints re-queries. */
+export function invalidateEndpointsCache() {
+  _endpointsCache = null;
+  _endpointsCacheTime = 0;
 }
 
 export function generateKey(): string {

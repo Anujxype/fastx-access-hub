@@ -34,22 +34,26 @@ const PanelPortal = () => {
   useEffect(() => {
     if (!slug) return;
     const init = async () => {
-      const [{ data: panelRows }, endpoints] = await Promise.all([
-        supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() }),
-        fetchAllEndpoints(),
-      ]);
-      const data = Array.isArray(panelRows) ? panelRows[0] : panelRows;
-      if (!data) { navigate(`/${slug}`); return; }
-      setPanel(data as ManagedPanel);
-      setAllEndpoints(endpoints);
+      try {
+        const [{ data: panelRows }, endpoints] = await Promise.all([
+          supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() }),
+          fetchAllEndpoints(),
+        ]);
+        const data = Array.isArray(panelRows) ? panelRows[0] : panelRows;
+        if (!data) { navigate(`/${slug}`); return; }
+        setPanel(data as ManagedPanel);
+        setAllEndpoints(endpoints);
 
-      const storedPortal = localStorage.getItem(`cfms_portal_${data.id}`);
-      if (storedPortal !== 'true') { navigate(`/${slug}`); return; }
+        const storedPortal = localStorage.getItem(`cfms_portal_${data.id}`);
+        if (storedPortal !== 'true') { navigate(`/${slug}`); return; }
 
-      const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
-      if (!data.is_active || expired) { navigate(`/${slug}`); return; }
+        const expired = data.expiry_date && new Date(data.expiry_date) < new Date();
+        if (!data.is_active || expired) { navigate(`/${slug}`); return; }
 
-      setLoading(false);
+        setLoading(false);
+      } catch {
+        navigate(`/${slug}`);
+      }
     };
     init();
   }, [slug, navigate]);
