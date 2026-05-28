@@ -89,7 +89,6 @@ const CustomEndpointManager = () => {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to delete endpoint', variant: 'destructive' });
       return;
     }
-    invalidateEndpointsCache();
     setEndpoints(endpoints.filter(e => e.id !== id));
     toast({ title: 'Endpoint Deleted', description: `"${name}" has been removed` });
   };

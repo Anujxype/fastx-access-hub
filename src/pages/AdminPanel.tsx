@@ -115,7 +115,7 @@ const AdminPanel = () => {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 animate-in ${
                   isActive
                     ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]'
-                    : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50 hover:border-border/50'
+                    : 'text-foreground/70 border border-border/40 bg-secondary/25 hover:text-foreground hover:bg-secondary/60 hover:border-border/60'
                 }`}
                 style={{ animationDelay: `${i * 50}ms` }}
               >

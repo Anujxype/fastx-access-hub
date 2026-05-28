@@ -59,6 +59,13 @@ const SubAdminPanel = () => {
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
 
+  // Safety valve: if the network is very slow and the panel fetch never resolves,
+  // force loading=false after 12s so the UI doesn't stay permanently frozen.
+  useEffect(() => {
+    const safety = setTimeout(() => setLoading(false), 12_000);
+    return () => clearTimeout(safety);
+  }, []);
+
   // Fetch panel data by slug with retry on transient network errors
   useEffect(() => {
     if (!slug) return;
@@ -231,7 +238,7 @@ const SubAdminPanel = () => {
             const isActive = tab === t.id;
             return (
               <button key={t.id} role="tab" aria-selected={isActive} aria-controls={`tabpanel-${t.id}`} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]' : 'text-muted-foreground border border-transparent hover:text-foreground hover:bg-secondary/50 hover:border-border/30'}`}>
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-gradient-to-r from-accent/20 to-accent/10 text-accent border border-accent/30 shadow-[0_0_16px_-4px_hsl(38_92%_50%/0.25)]' : 'text-foreground/70 border border-border/40 bg-secondary/25 hover:text-foreground hover:bg-secondary/60 hover:border-border/60'}`}>
                 <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} /> {t.label}
               </button>
             );

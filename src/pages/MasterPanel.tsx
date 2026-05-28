@@ -251,7 +251,6 @@ const MasterPanel = () => {
       // Check slug uniqueness
       const { data: existing, error: checkErr } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
       if (checkErr) {
-        console.error('Slug check error:', checkErr);
         toast({ title: 'Error', description: 'Failed to check slug uniqueness: ' + checkErr.message, variant: 'destructive' });
         setCreating(false);
         return;
@@ -292,7 +291,6 @@ const MasterPanel = () => {
 
       const { data: created, error } = await supabase.from('managed_panels').insert(insertData).select();
       if (error) {
-        console.error('Panel creation error:', error);
         toast({ title: 'Error creating panel', description: error.message, variant: 'destructive' });
       } else {
         if (import.meta.env.DEV) console.log('Panel created successfully:', created);
@@ -301,7 +299,6 @@ const MasterPanel = () => {
       }
       await fetchPanels();
     } catch (err: any) {
-      console.error('Unexpected error creating panel:', err);
       toast({ title: 'Unexpected Error', description: err?.message || 'Failed to create panel', variant: 'destructive' });
     }
     setCreating(false);
@@ -739,7 +736,7 @@ const MasterPanel = () => {
                 { id: 'logs' as const, label: 'Logs', icon: FileText },
               ].map(t => (
                 <button key={t.id} onClick={() => setDetailTab(t.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${detailTab === t.id ? 'bg-accent/20 text-accent border border-accent/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent'}`}>
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${detailTab === t.id ? 'bg-accent/20 text-accent border border-accent/30' : 'text-foreground/70 border border-border/40 bg-secondary/20 hover:text-foreground hover:bg-secondary/50'}`}>
                   <t.icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               ))}
