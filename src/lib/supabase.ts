@@ -3,7 +3,45 @@ import { createClient } from '@supabase/supabase-js';
 export const SUPABASE_URL = 'https://aokfmtjflwzbhsywngjt.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFva2ZtdGpmbHd6YmhzeXduZ2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTk1MTQsImV4cCI6MjA5NDc5NTUxNH0.PBqlOShLv6uBn-KLbUn9gJvSbdCqiD0C6APbSuD2c7E';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_FETCH_TIMEOUT_MS = 15_000;
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const timedFetch: typeof fetch = async (input, init = {}) => {
+  const method = (init.method || 'GET').toUpperCase();
+  const canRetry = method === 'GET' || method === 'HEAD';
+  const attempts = canRetry ? 2 : 1;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const onAbort = () => controller.abort();
+    init.signal?.addEventListener('abort', onAbort, { once: true });
+    const timeout = setTimeout(() => controller.abort(), SUPABASE_FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      if (attempt === 0 && canRetry && RETRYABLE_STATUS.has(response.status)) {
+        await wait(350);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      if (attempt === attempts - 1 || !canRetry) throw error;
+      await wait(350);
+    } finally {
+      clearTimeout(timeout);
+      init.signal?.removeEventListener('abort', onAbort);
+    }
+  }
+
+  throw new Error('Network request failed');
+};
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  global: { fetch: timedFetch },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+});
 
 // Lightweight health check used by admin/sub-admin panels.
 // Returns true if the Supabase REST endpoint is reachable within 8s.
@@ -118,26 +156,62 @@ export const AVAILABLE_ICONS = [
 let _endpointsCache: typeof ENDPOINTS | null = null;
 let _endpointsCacheTime = 0;
 const ENDPOINTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const ENDPOINTS_STORAGE_KEY = 'cfms_endpoints_cache';
+
+const readStoredEndpoints = (): typeof ENDPOINTS | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(ENDPOINTS_STORAGE_KEY) || localStorage.getItem(ENDPOINTS_STORAGE_KEY);
+    if (!raw) return null;
+    const { endpoints, ts }: { endpoints: typeof ENDPOINTS; ts: number } = JSON.parse(raw);
+    if (!Array.isArray(endpoints) || Date.now() - ts > ENDPOINTS_CACHE_TTL) return null;
+    return endpoints;
+  } catch {
+    return null;
+  }
+};
+
+const storeEndpoints = (endpoints: typeof ENDPOINTS) => {
+  if (typeof window === 'undefined') return;
+  const payload = JSON.stringify({ endpoints, ts: Date.now() });
+  try { sessionStorage.setItem(ENDPOINTS_STORAGE_KEY, payload); } catch {}
+  try { localStorage.setItem(ENDPOINTS_STORAGE_KEY, payload); } catch {}
+};
 
 export async function fetchAllEndpoints(): Promise<typeof ENDPOINTS> {
   const now = Date.now();
   if (_endpointsCache && now - _endpointsCacheTime < ENDPOINTS_CACHE_TTL) return _endpointsCache;
-  const { data } = await supabase.from('custom_endpoints').select('*').order('created_at', { ascending: true });
-  const custom = (data || []).map((ce: CustomEndpoint) => ({
-    endpoint: ce.endpoint.startsWith('/') ? ce.endpoint : `/${ce.endpoint}`,
-    param: ce.param,
-    label: ce.label,
-    icon: ce.icon,
-  }));
-  _endpointsCache = [...ENDPOINTS, ...custom];
-  _endpointsCacheTime = now;
-  return _endpointsCache;
+  const stored = readStoredEndpoints();
+  if (stored) {
+    _endpointsCache = stored;
+    _endpointsCacheTime = now;
+    return stored;
+  }
+
+  try {
+    const { data, error } = await supabase.from('custom_endpoints').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+    const custom = (data || []).map((ce: CustomEndpoint) => ({
+      endpoint: ce.endpoint.startsWith('/') ? ce.endpoint : `/${ce.endpoint}`,
+      param: ce.param,
+      label: ce.label,
+      icon: ce.icon,
+    }));
+    _endpointsCache = [...ENDPOINTS, ...custom];
+    _endpointsCacheTime = now;
+    storeEndpoints(_endpointsCache);
+    return _endpointsCache;
+  } catch {
+    return _endpointsCache || stored || ENDPOINTS;
+  }
 }
 
 /** Call after saving/deleting a custom endpoint so the next fetchAllEndpoints re-queries. */
 export function invalidateEndpointsCache() {
   _endpointsCache = null;
   _endpointsCacheTime = 0;
+  try { sessionStorage.removeItem(ENDPOINTS_STORAGE_KEY); } catch {}
+  try { localStorage.removeItem(ENDPOINTS_STORAGE_KEY); } catch {}
 }
 
 export function generateKey(): string {
