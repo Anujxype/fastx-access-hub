@@ -15,6 +15,15 @@ const iconMap: Record<string, any> = {
   CreditCard, Wallet, CircleDollarSign, Car, Search, FileCheck, Flame, Truck,
 };
 
+const getCachedPanel = (slug: string): ManagedPanel | null => {
+  try {
+    const raw = sessionStorage.getItem(`cfms_pc_${slug.toLowerCase()}`);
+    if (!raw) return null;
+    const { row } = JSON.parse(raw) as { row: ManagedPanel };
+    return row || null;
+  } catch { return null; }
+};
+
 const PanelPortal = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -40,7 +49,7 @@ const PanelPortal = () => {
           supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() }),
           fetchAllEndpoints(),
         ]);
-        const data = Array.isArray(panelRows) ? panelRows[0] : panelRows;
+        const data = (Array.isArray(panelRows) ? panelRows[0] : panelRows) || getCachedPanel(slug);
         if (!data) { navigate(`/${slug}`); return; }
         setPanel(data as ManagedPanel);
         setAllEndpoints(endpoints);
@@ -53,6 +62,14 @@ const PanelPortal = () => {
 
         setLoading(false);
       } catch {
+        const cached = getCachedPanel(slug);
+        const endpoints = await fetchAllEndpoints();
+        if (cached && localStorage.getItem(`cfms_portal_${cached.id}`) === 'true') {
+          setPanel(cached);
+          setAllEndpoints(endpoints);
+          setLoading(false);
+          return;
+        }
         navigate(`/${slug}`);
       }
     };
