@@ -33,6 +33,15 @@ const HEALTH_SERVICES = [
   { name: 'Storage', icon: Server, status: 'Online' },
 ] as const;
 
+const getCachedPanel = (slug: string): ManagedPanel | null => {
+  try {
+    const raw = sessionStorage.getItem(`cfms_pc_${slug.toLowerCase()}`);
+    if (!raw) return null;
+    const { row } = JSON.parse(raw) as { row: ManagedPanel };
+    return row || null;
+  } catch { return null; }
+};
+
 const SubAdminPanel = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -55,12 +64,10 @@ const SubAdminPanel = () => {
     if (!slug) return;
     const fetchPanel = async () => {
       setLoading(true);
+      const cached = getCachedPanel(slug);
       const { data, error } = await supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() });
-      const row = Array.isArray(data) ? data[0] : data;
-      if (error || !row) {
-        navigate(`/${slug}`);
-        return;
-      }
+      const row = (Array.isArray(data) ? data[0] : data) || (!error ? null : cached);
+      if (!row) { navigate(`/${slug}`); return; }
       // get_panel_by_slug intentionally omits master_license_key + panel_password
       setPanel(row as ManagedPanel);
       setPanelId(row.id);
