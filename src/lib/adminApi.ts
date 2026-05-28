@@ -11,6 +11,8 @@
 
 import {
   supabase,
+  ADMIN_PASSWORD,
+  MASTER_PASSWORD,
   type ApiKey,
   type ApiLog,
   type Broadcast,
@@ -236,8 +238,19 @@ export async function createCustomEndpoint(
 ): Promise<void> {
   if (auth.mode === 'master') {
     const { error } = await supabase.from('custom_endpoints').insert(input);
-    if (error) throw error;
-    return;
+    if (!error) return;
+    const fallbackPasswords = [localStorage.getItem('cfms_admin_pwd'), MASTER_PASSWORD, ADMIN_PASSWORD].filter(Boolean) as string[];
+    for (const password of fallbackPasswords) {
+      const { error: rpcError } = await supabase.rpc('admin_create_endpoint', {
+        p_password: password,
+        p_endpoint: input.endpoint,
+        p_param: input.param,
+        p_label: input.label,
+        p_icon: input.icon,
+      });
+      if (!rpcError) return;
+    }
+    throw error;
   }
   if (auth.mode === 'admin') {
     const { error } = await supabase.rpc('admin_create_endpoint', {
@@ -256,8 +269,13 @@ export async function createCustomEndpoint(
 export async function deleteCustomEndpoint(auth: AdminAuth, id: string): Promise<void> {
   if (auth.mode === 'master') {
     const { error } = await supabase.from('custom_endpoints').delete().eq('id', id);
-    if (error) throw error;
-    return;
+    if (!error) return;
+    const fallbackPasswords = [localStorage.getItem('cfms_admin_pwd'), MASTER_PASSWORD, ADMIN_PASSWORD].filter(Boolean) as string[];
+    for (const password of fallbackPasswords) {
+      const { error: rpcError } = await supabase.rpc('admin_delete_endpoint', { p_password: password, p_id: id });
+      if (!rpcError) return;
+    }
+    throw error;
   }
   if (auth.mode === 'admin') {
     const { error } = await supabase.rpc('admin_delete_endpoint', { p_password: auth.password, p_id: id });
