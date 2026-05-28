@@ -69,11 +69,14 @@ const SubAdminPanel = () => {
   // Fetch panel data by slug with retry on transient network errors
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     const fetchPanel = async (retryCount = 0): Promise<void> => {
+      if (cancelled) return;
       setLoading(true);
       try {
         const { data, error } = await supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() });
         const row = (Array.isArray(data) ? data[0] : data) ?? (error ? getCachedPanel(slug) : null);
+        if (cancelled) return;
         if (!row) { navigate(`/${slug}`); return; }
         // get_panel_by_slug intentionally omits master_license_key + panel_password
         setPanel(row as ManagedPanel);
@@ -93,24 +96,26 @@ const SubAdminPanel = () => {
         }
         setLoading(false);
       } catch {
+        if (cancelled) return;
         if (retryCount < 2) {
           await new Promise(res => setTimeout(res, 1500 * (retryCount + 1)));
           return fetchPanel(retryCount + 1);
         }
         // Last resort: serve from session-storage cache
         const cached = getCachedPanel(slug);
-        if (cached && localStorage.getItem(`cfms_panel_${cached.id}`) === 'true') {
+        if (!cancelled && cached && localStorage.getItem(`cfms_panel_${cached.id}`) === 'true') {
           setPanel(cached);
           setPanelId(cached.id);
           setAuthenticated(true);
           setLoading(false);
           return;
         }
-        navigate(`/${slug}`);
-        setLoading(false);
+        if (!cancelled) navigate(`/${slug}`);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchPanel();
+    return () => { cancelled = true; };
   }, [slug, navigate]);
 
   // Kill switch — RLS lockdown blocks anon realtime, so poll every 30s using

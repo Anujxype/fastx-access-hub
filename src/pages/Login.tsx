@@ -35,17 +35,8 @@ const Login = () => {
       localStorage.setItem('cfms_key_name', row.name);
       localStorage.setItem('cfms_key_id', row.id);
 
-      // Fire-and-forget broadcast pull
-      supabase.rpc('get_latest_broadcast', { p_panel_id: null }).then(({ data: bData }) => {
-        const bc = Array.isArray(bData) ? bData[0] : bData;
-        if (bc) {
-          const lastSeen = localStorage.getItem('cfms_last_broadcast');
-          if (lastSeen !== bc.id) {
-            localStorage.setItem('cfms_broadcast', JSON.stringify(bc));
-            localStorage.setItem('cfms_last_broadcast', bc.id);
-          }
-        }
-      });
+      // Navigate immediately — Portal.tsx fetches the broadcast itself on mount
+      // so there's no need to write to localStorage before navigating.
       navigate('/portal');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Connection error');

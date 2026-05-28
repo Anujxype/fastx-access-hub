@@ -32,11 +32,20 @@ const Portal = () => {
 
   useEffect(() => {
     if (!localStorage.getItem('cfms_key')) { navigate('/'); return; }
-    try {
-      const bc = localStorage.getItem('cfms_broadcast');
-      if (bc) { setBroadcast(JSON.parse(bc)); localStorage.removeItem('cfms_broadcast'); }
-    } catch { /* ignore malformed broadcast data */ }
+    // Clean up any stale broadcast data left by the Login page
+    try { localStorage.removeItem('cfms_broadcast'); } catch {}
     fetchAllEndpoints().then(setAllEndpoints);
+    // Fetch the latest broadcast directly so we don't race with the fire-and-forget
+    // in Login.tsx that writes to localStorage before Portal mounts.
+    supabase.rpc('get_latest_broadcast', { p_panel_id: null }).then(({ data }) => {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) return;
+      const lastSeen = localStorage.getItem('cfms_last_broadcast');
+      if (lastSeen !== row.id) {
+        setBroadcast(row);
+        localStorage.setItem('cfms_last_broadcast', row.id);
+      }
+    }).catch(() => { /* non-critical — silently ignore */ });
   }, [navigate]);
 
   const handleSearch = async () => {

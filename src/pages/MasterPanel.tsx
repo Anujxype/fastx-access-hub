@@ -158,7 +158,7 @@ const MasterPanel = () => {
     if (!isAuthenticated) return;
     if (tab === 'broadcasts') {
       supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(50)
-        .then(({ data }) => setBroadcasts(data || []));
+        .then(({ data, error }) => { if (!error) setBroadcasts(data || []); });
     }
     if (tab === 'endpoints') {
       // Always invalidate before loading so newly created endpoints are visible
@@ -186,8 +186,9 @@ const MasterPanel = () => {
     const { data, error } = await supabase.from('master_admins').select('*').order('created_at', { ascending: false });
     if (error) {
       toast({ title: 'Error loading admins', description: error.message, variant: 'destructive' });
+    } else {
+      setAdmins(data || []);
     }
-    setAdmins(data || []);
     setAdminsLoading(false);
   };
 
@@ -312,7 +313,9 @@ const MasterPanel = () => {
       return;
     }
     const updated = { ...panel, is_active: newActive };
-    setPanels(prev => prev.map(p => p.id === panel.id ? updated : p));
+    const newPanels = panels.map(p => p.id === panel.id ? updated : p);
+    setPanels(newPanels);
+    writeCachedPanels(newPanels);
     if (selectedPanel?.id === panel.id) setSelectedPanel(updated);
     toast({ title: newActive ? 'Panel Enabled' : 'Panel Disabled', description: panel.panel_name });
   };
@@ -324,7 +327,9 @@ const MasterPanel = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return;
     }
-    setPanels(prev => prev.filter(p => p.id !== id));
+    const newPanels = panels.filter(p => p.id !== id);
+    setPanels(newPanels);
+    writeCachedPanels(newPanels);
     if (selectedPanel?.id === id) setSelectedPanel(null);
     toast({ title: 'Panel Deleted' });
   };
@@ -349,6 +354,7 @@ const MasterPanel = () => {
     }
     const updatedPanels = panels.map(p => p.id === panelId ? { ...p, panel_password: newPass.trim() } : p);
     setPanels(updatedPanels);
+    writeCachedPanels(updatedPanels);
     if (selectedPanel?.id === panelId) setSelectedPanel({ ...selectedPanel, panel_password: newPass.trim() });
     setChangingPassword(null); setNewPass('');
     toast({ title: 'Password Updated' });
@@ -363,7 +369,9 @@ const MasterPanel = () => {
       return;
     }
     const updatedPanel = { ...panel, allowed_endpoints: updated };
-    setPanels(prev => prev.map(p => p.id === panel.id ? updatedPanel : p));
+    const newPanels = panels.map(p => p.id === panel.id ? updatedPanel : p);
+    setPanels(newPanels);
+    writeCachedPanels(newPanels);
     if (selectedPanel?.id === panel.id) setSelectedPanel(updatedPanel);
   };
 

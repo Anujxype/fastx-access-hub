@@ -41,7 +41,7 @@ const AdminPanel = () => {
 
   useEffect(() => {
     if (tab === 'broadcast') {
-      listBroadcasts(resolveAuth()).then(setBroadcasts).catch(() => setBroadcasts([]));
+      listBroadcasts(resolveAuth()).then(data => setBroadcasts(data)).catch(() => { /* keep existing list on error */ });
     }
     if (tab === 'health') {
       setHealthOk(null);
