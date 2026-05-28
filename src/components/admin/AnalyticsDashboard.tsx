@@ -19,10 +19,11 @@ const AnalyticsDashboard = ({ panelId }: { panelId?: string } = {}) => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (signal?: { cancelled: boolean }) => {
     setLoading(true);
     try {
       const data = await listLogs(resolveAuth(panelId), 1000, panelId);
+      if (signal?.cancelled) return;
       // Defence-in-depth: if master mode returned cross-panel data, isolate here.
       const isolated = panelId ? (data || []).filter(l => l.panel_id === panelId) : (data || []);
       // Project only the fields the dashboard needs
@@ -34,15 +35,19 @@ const AnalyticsDashboard = ({ panelId }: { panelId?: string } = {}) => {
         created_at: l.created_at,
         device: l.device,
       })));
-    } catch (err) {
-      console.error('Analytics fetch error:', err);
-      setLogs([]);
+    } catch {
+      if (signal?.cancelled) return;
+      // Keep existing data — don't wipe on transient network error
     } finally {
-      setLoading(false);
+      if (!signal?.cancelled) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchLogs(); }, []);
+  useEffect(() => {
+    const signal = { cancelled: false };
+    fetchLogs(signal);
+    return () => { signal.cancelled = true; };
+  }, []);
 
   const filteredLogs = useMemo(() => {
     if (timeRange === 'all') return logs;

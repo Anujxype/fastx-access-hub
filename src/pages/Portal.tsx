@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, API_BASE, ENDPOINTS, fetchAllEndpoints, getDeviceInfo, getGeoInfo } from '@/lib/supabase';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import CFMSLogo from '@/components/CFMSLogo';
 import Starfield from '@/components/Starfield';
 import {
@@ -23,29 +24,17 @@ const Portal = () => {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [broadcast, setBroadcast] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+
+  const broadcast = useBroadcast(null);
 
   const keyName = localStorage.getItem('cfms_key_name') || 'User';
   const keyId = localStorage.getItem('cfms_key_id');
 
   useEffect(() => {
     if (!localStorage.getItem('cfms_key')) { navigate('/'); return; }
-    // Clean up any stale broadcast data left by the Login page
-    try { localStorage.removeItem('cfms_broadcast'); } catch {}
     fetchAllEndpoints().then(setAllEndpoints);
-    // Fetch the latest broadcast directly so we don't race with the fire-and-forget
-    // in Login.tsx that writes to localStorage before Portal mounts.
-    supabase.rpc('get_latest_broadcast', { p_panel_id: null }).then(({ data }) => {
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row) return;
-      const lastSeen = localStorage.getItem('cfms_last_broadcast');
-      if (lastSeen !== row.id) {
-        setBroadcast(row);
-        localStorage.setItem('cfms_last_broadcast', row.id);
-      }
-    }).catch(() => { /* non-critical — silently ignore */ });
   }, [navigate]);
 
   const handleSearch = async () => {

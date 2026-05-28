@@ -205,8 +205,8 @@ const MasterPanel = () => {
     } else {
       toast({ title: 'Admin Added', description: `${newAdminEmail.trim()} added as ${newAdminRole}` });
       setNewAdminEmail(''); setNewAdminName(''); setNewAdminRole('monitor');
+      await fetchAdmins();
     }
-    await fetchAdmins();
     setAddingAdmin(false);
   };
 
@@ -245,7 +245,6 @@ const MasterPanel = () => {
 
       if (!slug) {
         toast({ title: 'Error', description: 'Invalid panel name. Use alphanumeric characters.', variant: 'destructive' });
-        setCreating(false);
         return;
       }
 
@@ -253,12 +252,10 @@ const MasterPanel = () => {
       const { data: existing, error: checkErr } = await supabase.from('managed_panels').select('id').eq('slug', slug).maybeSingle();
       if (checkErr) {
         toast({ title: 'Error', description: 'Failed to check slug uniqueness: ' + checkErr.message, variant: 'destructive' });
-        setCreating(false);
         return;
       }
       if (existing) {
         toast({ title: 'Error', description: `A panel with URL "/${slug}" already exists. Use a different name.`, variant: 'destructive' });
-        setCreating(false);
         return;
       }
 
@@ -271,7 +268,6 @@ const MasterPanel = () => {
         .maybeSingle();
       if (pwDup) {
         toast({ title: 'Error', description: 'This password is already used by another panel. Choose a unique password.', variant: 'destructive' });
-        setCreating(false);
         return;
       }
 
@@ -297,12 +293,13 @@ const MasterPanel = () => {
         if (import.meta.env.DEV) console.log('Panel created successfully:', created);
         toast({ title: 'Panel Created', description: `URL: /${slug} | License: ${licenseKey}` });
         setNewName(''); setNewPassword('admin123'); setNewExpiry(''); setShowCreate(false);
+        await fetchPanels();
       }
-      await fetchPanels();
     } catch (err: any) {
       toast({ title: 'Unexpected Error', description: err?.message || 'Failed to create panel', variant: 'destructive' });
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   };
 
   const togglePanel = async (panel: ManagedPanel) => {

@@ -30,20 +30,26 @@ const CustomEndpointManager = () => {
   const [param, setParam] = useState('');
   const [icon, setIcon] = useState('Search');
 
-  const fetchEndpoints = async () => {
+  const fetchEndpoints = async (signal?: { cancelled: boolean }) => {
     setLoading(true);
     try {
       const data = await listCustomEndpoints();
+      if (signal?.cancelled) return;
       setEndpoints(data);
     } catch (err) {
-      console.error('Custom endpoints fetch error:', err);
+      if (signal?.cancelled) return;
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to fetch custom endpoints', variant: 'destructive' });
-      setEndpoints([]);
+      // Keep existing list — don't wipe on transient network error
+    } finally {
+      if (!signal?.cancelled) setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => { fetchEndpoints(); }, []);
+  useEffect(() => {
+    const signal = { cancelled: false };
+    fetchEndpoints(signal);
+    return () => { signal.cancelled = true; };
+  }, []);
 
   const createEndpoint = async () => {
     if (!label.trim() || !endpoint.trim() || !param.trim()) {
@@ -72,10 +78,10 @@ const CustomEndpointManager = () => {
       toast({ title: 'Endpoint Created', description: `"${label.trim()}" (${path}) added successfully` });
       setLabel(''); setEndpoint('/'); setParam(''); setIcon('Search');
       setShowForm(false);
+      await fetchEndpoints();
     } catch (err) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to create endpoint', variant: 'destructive' });
     } finally {
-      await fetchEndpoints();
       setCreating(false);
     }
   };

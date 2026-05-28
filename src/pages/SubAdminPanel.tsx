@@ -61,8 +61,9 @@ const SubAdminPanel = () => {
 
   // Safety valve: if the network is very slow and the panel fetch never resolves,
   // force loading=false after 12s so the UI doesn't stay permanently frozen.
+  // We only trigger this if loading is still true at that point.
   useEffect(() => {
-    const safety = setTimeout(() => setLoading(false), 12_000);
+    const safety = setTimeout(() => setLoading(prev => prev ? false : prev), 12_000);
     return () => clearTimeout(safety);
   }, []);
 

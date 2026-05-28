@@ -29,21 +29,26 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const fetchKeys = async () => {
+  const fetchKeys = async (signal?: { cancelled: boolean }) => {
     setLoading(true);
     try {
       const data = await listKeys(resolveAuth(panelId));
+      if (signal?.cancelled) return;
       setKeys((data || []).filter(k => k.key_value));
     } catch (err) {
-      console.error('Keys fetch error:', err);
+      if (signal?.cancelled) return;
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to fetch API keys', variant: 'destructive' });
-      setKeys([]);
+      // Keep existing list — don't wipe on transient network error
     } finally {
-      setLoading(false);
+      if (!signal?.cancelled) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchKeys(); }, []);
+  useEffect(() => {
+    const signal = { cancelled: false };
+    fetchKeys(signal);
+    return () => { signal.cancelled = true; };
+  }, []);
 
   const isExpired = (key: ApiKey) => key.expires_at && isPast(new Date(key.expires_at));
 
@@ -101,11 +106,12 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
       toast({ title: 'Key Created', description: `"${name.trim()}" has been created successfully` });
       setName(''); setKeyValue(''); setExpiresAt(''); setAllowedIps('');
       setShowCreateForm(false);
+      await fetchKeys();
     } catch (err) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to create key', variant: 'destructive' });
+    } finally {
+      setCreating(false);
     }
-    await fetchKeys();
-    setCreating(false);
   };
 
   const toggleKey = async (id: string, currentState: boolean) => {

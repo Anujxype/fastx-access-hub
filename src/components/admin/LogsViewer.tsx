@@ -23,21 +23,28 @@ const LogsViewer = ({ panelId }: { panelId?: string } = {}) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [page, setPage] = useState(0);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (signal?: { cancelled: boolean }) => {
     setLoading(true);
     try {
       const data = await listLogs(resolveAuth(panelId), 1000, panelId);
+      if (signal?.cancelled) return;
       // Defence-in-depth: if master mode returned cross-panel data, isolate here.
       const isolated = panelId ? (data || []).filter(l => l.panel_id === panelId) : (data || []);
       setLogs(isolated);
     } catch (err) {
+      if (signal?.cancelled) return;
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to fetch logs', variant: 'destructive' });
-      setLogs([]);
+      // Keep existing list — don't wipe on transient network error
+    } finally {
+      if (!signal?.cancelled) setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => { fetchLogs(); }, []);
+  useEffect(() => {
+    const signal = { cancelled: false };
+    fetchLogs(signal);
+    return () => { signal.cancelled = true; };
+  }, []);
 
   const uniqueEndpoints = useMemo(() => {
     const eps = new Set(logs.map(l => l.endpoint));
