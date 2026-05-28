@@ -94,7 +94,6 @@ export function useMasterAuth() {
 
     // 2. Listen for future auth changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!initialized.current) return; // Skip until getSession completes
       await processUser(session?.user ?? null, ignoreRef);
     });
 
