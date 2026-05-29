@@ -2,17 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_PASSWORD } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
-import { Shield, Lock, Loader2, ArrowLeft, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, AlertTriangle, ArrowRight } from 'lucide-react';
 
 const AdminLogin = () => {
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = () => {
     if (!password) return;
-    setLoading(true);
     setError('');
     if (password === ADMIN_PASSWORD) {
       localStorage.setItem('cfms_admin', 'true');
@@ -21,7 +19,6 @@ const AdminLogin = () => {
       navigate('/admin');
     } else {
       setError('Invalid admin password');
-      setLoading(false);
     }
   };
 
@@ -85,10 +82,10 @@ const AdminLogin = () => {
             </div>
           )}
 
-          <button onClick={handleLogin} disabled={loading} className="btn-admin w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5">
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-            {loading ? 'Authenticating...' : 'Access Admin Panel'}
-            {!loading && <ArrowRight className="w-4 h-4 ml-1" />}
+          <button onClick={handleLogin} className="btn-admin w-full flex items-center justify-center gap-3 text-sm font-bold tracking-wide py-3.5">
+            <Shield className="w-5 h-5" />
+            Access Admin Panel
+            <ArrowRight className="w-4 h-4 ml-1" />
           </button>
         </div>
 

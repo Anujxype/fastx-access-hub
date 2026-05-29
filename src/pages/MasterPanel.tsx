@@ -44,7 +44,7 @@ const ROLE_BADGE: Record<MasterRole, { label: string; color: string }> = {
 
 const MASTER_PANELS_CACHE_KEY = 'cfms_master_panels_cache';
 
-const readCachedPanels = (): ManagedPanel[] => {
+export const readCachedPanels = (): ManagedPanel[] => {
   try {
     const raw = sessionStorage.getItem(MASTER_PANELS_CACHE_KEY) || localStorage.getItem(MASTER_PANELS_CACHE_KEY);
     if (!raw) return [];
@@ -53,7 +53,7 @@ const readCachedPanels = (): ManagedPanel[] => {
   } catch { return []; }
 };
 
-const writeCachedPanels = (panels: ManagedPanel[]) => {
+export const writeCachedPanels = (panels: ManagedPanel[]) => {
   const payload = JSON.stringify({ panels, ts: Date.now() });
   try { sessionStorage.setItem(MASTER_PANELS_CACHE_KEY, payload); } catch {}
   try { localStorage.setItem(MASTER_PANELS_CACHE_KEY, payload); } catch {}

@@ -73,6 +73,23 @@ const SubAdminPanel = () => {
     let cancelled = false;
     const fetchPanel = async (retryCount = 0): Promise<void> => {
       if (cancelled) return;
+
+      // Use the panel row already cached by PanelLanding to skip an extra DB round-trip.
+      // Only hit the network on first load if there is truly no cache (e.g. direct deep-link).
+      const cachedRow = getCachedPanel(slug);
+      if (cachedRow && retryCount === 0) {
+        if (cancelled) return;
+        setPanel(cachedRow as ManagedPanel);
+        setPanelId(cachedRow.id);
+        const expired = cachedRow.expiry_date && new Date(cachedRow.expiry_date) < new Date();
+        if (!cachedRow.is_active || expired) setDisabled(true);
+        const storedAuth = localStorage.getItem(`cfms_panel_${cachedRow.id}`);
+        if (storedAuth !== 'true') { navigate(`/${slug}`); return; }
+        setAuthenticated(true);
+        setLoading(false);
+        return; // Kill-switch polling (every 30 s) will detect remote state changes
+      }
+
       setLoading(true);
       try {
         const { data, error } = await supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() });

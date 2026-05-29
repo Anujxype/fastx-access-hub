@@ -47,11 +47,16 @@ const PanelPortal = () => {
     if (!slug) return;
     const init = async (retryCount = 0): Promise<void> => {
       try {
-        const [{ data: panelRows }, endpoints] = await Promise.all([
-          supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() }),
+        // Use the panel row already cached by PanelLanding to skip an extra DB round-trip.
+        const cached = getCachedPanel(slug);
+        const [panelResult, endpoints] = await Promise.all([
+          cached
+            ? Promise.resolve({ data: cached, error: null })
+            : supabase.rpc('get_panel_by_slug', { p_slug: slug.toLowerCase() }),
           fetchAllEndpoints(),
         ]);
-        const data = (Array.isArray(panelRows) ? panelRows[0] : panelRows) || getCachedPanel(slug);
+        const panelRows = (panelResult as { data: unknown }).data;
+        const data = (Array.isArray(panelRows) ? panelRows[0] : panelRows) || cached;
         if (!data) { navigate(`/${slug}`); return; }
         setPanel(data as ManagedPanel);
         setAllEndpoints(endpoints);

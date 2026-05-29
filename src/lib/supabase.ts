@@ -3,12 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 export const SUPABASE_URL = 'https://aokfmtjflwzbhsywngjt.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFva2ZtdGpmbHd6YmhzeXduZ2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTk1MTQsImV4cCI6MjA5NDc5NTUxNH0.PBqlOShLv6uBn-KLbUn9gJvSbdCqiD0C6APbSuD2c7E';
 
-const SUPABASE_FETCH_TIMEOUT_MS = 15_000;
+const SUPABASE_FETCH_TIMEOUT_MS = 10_000;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const timedFetch: typeof fetch = async (input, init?: RequestInit) => {
+export const timedFetch: typeof fetch = async (input, init?: RequestInit) => {
   const requestInit = init ?? {};
   const method = (requestInit.method || 'GET').toUpperCase();
   const canRetry = method === 'GET' || method === 'HEAD';

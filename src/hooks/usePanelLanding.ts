@@ -22,7 +22,7 @@ const clearPanelSessions = (panelId: string) => {
 // ── Panel row cache (sessionStorage, 2-min TTL) ──────────────────────────────
 const PANEL_CACHE_TTL = 2 * 60 * 1000;
 
-const getCachedRow = (slug: string): ManagedPanel | null => {
+export const getCachedRow = (slug: string): ManagedPanel | null => {
   try {
     const raw = sessionStorage.getItem(`cfms_pc_${slug}`);
     if (!raw) return null;
@@ -32,11 +32,11 @@ const getCachedRow = (slug: string): ManagedPanel | null => {
   } catch { return null; }
 };
 
-const setCachedRow = (slug: string, row: ManagedPanel) => {
+export const setCachedRow = (slug: string, row: ManagedPanel) => {
   try { sessionStorage.setItem(`cfms_pc_${slug}`, JSON.stringify({ row, ts: Date.now() })); } catch {}
 };
 
-const invalidateCache = (slug: string) => {
+export const invalidateCache = (slug: string) => {
   try { sessionStorage.removeItem(`cfms_pc_${slug}`); } catch {}
 };
 // ─────────────────────────────────────────────────────────────────────────────
