@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Key, Loader2, Lock, Shield, ShieldOff, Zap } from "lucide-react";
 
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllEndpoints } from "@/lib/supabase";
 import { usePanelLanding } from "@/hooks/usePanelLanding";
 import PanelLandingScaffold from "@/components/panel/PanelLandingScaffold";
 import PanelLandingHeader from "@/components/panel/PanelLandingHeader";
@@ -26,6 +26,11 @@ const PanelLanding = () => {
   useEffect(() => {
     if (redirectTo) navigate(redirectTo);
   }, [redirectTo, navigate]);
+
+  // Pre-warm endpoint cache once the panel is loaded so PanelPortal renders instantly after login.
+  useEffect(() => {
+    if (!loading && panel) void fetchAllEndpoints();
+  }, [loading, panel]);
 
   const handlePortalLogin = async () => {
     if (!key.trim() || !panel) return;

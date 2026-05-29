@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllEndpoints } from '@/lib/supabase';
 import CFMSLogo from '@/components/CFMSLogo';
 import Starfield from '@/components/Starfield';
 import { Key, Shield, Loader2, Sparkles, ArrowRight, Zap } from 'lucide-react';
@@ -18,6 +18,8 @@ const Login = () => {
     // endpoints rather than the panel-restricted set.
     const panelId = localStorage.getItem('cfms_panel_id');
     if (stored && !panelId) navigate('/portal');
+    // Pre-warm endpoint cache while user types their key so Portal renders instantly.
+    else void fetchAllEndpoints();
   }, [navigate]);
 
   const handleLogin = async () => {
