@@ -11,7 +11,7 @@ import {
   Settings, Send as SendIcon, BarChart3, FileText, Key,
   Loader2, RefreshCw, Copy, Eye, EyeOff, Lock,
   ArrowLeft, Shield, Activity, Globe, Clock, Users,
-  CheckSquare, Square, ChevronRight, Pencil, UserCircle
+  CheckSquare, Square, ChevronRight, Pencil, UserCircle, ExternalLink, LogIn
 } from 'lucide-react';
 
 // Heavy admin tabs are split out so opening MasterPanel doesn't pull recharts
@@ -85,6 +85,12 @@ const MasterPanel = () => {
   // Password change
   const [changingPassword, setChangingPassword] = useState<string | null>(null);
   const [newPass, setNewPass] = useState('');
+
+  // Quick-login as admin or user from master panel
+  const [quickLoginPanel, setQuickLoginPanel] = useState<ManagedPanel | null>(null);
+  const [quickLoginMode, setQuickLoginMode] = useState<'admin' | 'user' | null>(null);
+  const [panelKeys, setPanelKeys] = useState<{ id: string; name: string; key_value: string }[]>([]);
+  const [panelKeysLoading, setPanelKeysLoading] = useState(false);
 
   // Admin management
   const [admins, setAdmins] = useState<{ id: string; email: string; role: string; display_name: string | null }[]>([]);
@@ -407,6 +413,39 @@ const MasterPanel = () => {
     toast({ title: 'Copied to clipboard' });
   };
 
+  const openQuickLogin = async (panel: ManagedPanel, mode: 'admin' | 'user') => {
+    setQuickLoginPanel(panel);
+    setQuickLoginMode(mode);
+    if (mode === 'user') {
+      setPanelKeysLoading(true);
+      const { data } = await supabase
+        .from('access_keys')
+        .select('id, name, key_value')
+        .eq('panel_id', panel.id)
+        .eq('is_active', true)
+        .limit(30);
+      setPanelKeys(data || []);
+      setPanelKeysLoading(false);
+    }
+  };
+
+  const loginAsAdmin = (panel: ManagedPanel) => {
+    localStorage.setItem(`cfms_panel_${panel.id}`, 'true');
+    localStorage.setItem(`cfms_panel_pwd_${panel.id}`, panel.panel_password || '');
+    window.open(`/${panel.slug}/admin`, '_blank');
+    setQuickLoginPanel(null); setQuickLoginMode(null);
+  };
+
+  const loginAsUser = (panel: ManagedPanel, key: { id: string; name: string; key_value: string }) => {
+    localStorage.setItem(`cfms_portal_${panel.id}`, 'true');
+    localStorage.setItem('cfms_key', key.key_value);
+    localStorage.setItem('cfms_key_name', key.name);
+    localStorage.setItem('cfms_key_id', key.id);
+    localStorage.setItem('cfms_panel_id', panel.id);
+    window.open(`/${panel.slug}/portal`, '_blank');
+    setQuickLoginPanel(null); setQuickLoginMode(null);
+  };
+
   const handleLogout = async () => {
     localStorage.removeItem('cfms_master');
     localStorage.removeItem('cfms_master_role');
@@ -425,6 +464,7 @@ const MasterPanel = () => {
   if (!isAuthenticated) return null;
 
   return (
+    <>
     <div className="min-h-screen pb-8">
       {/* Header */}
       <header className="glass-strong sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between rounded-none border-x-0 border-t-0">
@@ -683,7 +723,7 @@ const MasterPanel = () => {
                         </div>
                       ) : null}
 
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex gap-2 pt-1 flex-wrap">
                         <button onClick={() => { setSelectedPanel(panel); setDetailTab('overview'); }} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-all">
                           <Settings className="w-3.5 h-3.5" /> Details
                           <ChevronRight className="w-3 h-3" />
@@ -696,6 +736,9 @@ const MasterPanel = () => {
                         <button onClick={() => copyToClipboard(`${window.location.origin}/${panel.slug}`)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary/50 text-muted-foreground hover:text-foreground transition-all">
                           <Globe className="w-3.5 h-3.5" /> Copy URL
                         </button>
+                        <a href={`/${panel.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all">
+                          <ExternalLink className="w-3.5 h-3.5" /> Open Panel
+                        </a>
                       </div>
                     </div>
                   );
@@ -749,6 +792,25 @@ const MasterPanel = () => {
 
             {detailTab === 'overview' && (
               <div className="space-y-4 animate-in">
+                {/* Quick Login Actions */}
+                <div className="glass-admin p-4">
+                  <h4 className="text-sm font-bold mb-3 flex items-center gap-2"><LogIn className="w-4 h-4 text-primary" /> Quick Access</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <a href={`/${selectedPanel.slug}`} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-all border border-primary/20">
+                      <ExternalLink className="w-4 h-4" /> Open Panel
+                    </a>
+                    <button onClick={() => loginAsAdmin(selectedPanel)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 text-sm font-medium transition-all border border-accent/20">
+                      <Shield className="w-4 h-4" /> Login as Admin
+                    </button>
+                    <button onClick={() => openQuickLogin(selectedPanel, 'user')}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 text-success hover:bg-success/20 text-sm font-medium transition-all border border-success/20">
+                      <Key className="w-4 h-4" /> Login as User
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="glass p-4">
                     <p className="text-[10px] text-muted-foreground font-semibold tracking-wider mb-1">PANEL PASSWORD</p>
@@ -1014,6 +1076,46 @@ const MasterPanel = () => {
         )}
       </div>
     </div>
+
+    {/* ===== USER KEY PICKER MODAL ===== */}
+    {quickLoginPanel && quickLoginMode === 'user' && (
+      <>
+        <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm" onClick={() => { setQuickLoginPanel(null); setQuickLoginMode(null); }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="glass-admin w-full max-w-md p-6 space-y-4 animate-in pointer-events-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <Key className="w-4 h-4 text-success" /> Login as User — {quickLoginPanel.panel_name}
+              </h3>
+              <button onClick={() => { setQuickLoginPanel(null); setQuickLoginMode(null); }} className="p-1.5 hover:bg-secondary/50 rounded-lg transition-colors text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            <p className="text-xs text-muted-foreground">Select an active access key to log in as a portal user. Opens in a new tab.</p>
+            {panelKeysLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-success" /></div>
+            ) : panelKeys.length === 0 ? (
+              <div className="text-center py-6">
+                <Key className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No active keys for this panel</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {panelKeys.map(k => (
+                  <button key={k.id} onClick={() => loginAsUser(quickLoginPanel, k)}
+                    className="w-full flex items-center justify-between gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-success/10 hover:border-success/20 border border-transparent text-left transition-all group">
+                    <div>
+                      <p className="font-medium text-sm">{k.name}</p>
+                      <p className="text-xs font-mono text-muted-foreground">{k.key_value}</p>
+                    </div>
+                    <LogIn className="w-4 h-4 text-muted-foreground group-hover:text-success transition-colors flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+    </>
   );
 };
 
