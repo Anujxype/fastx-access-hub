@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Key, Loader2, Lock, Shield, ShieldOff, Zap } from "lucide-react";
+import { Key, Loader2, Lock, Shield, ShieldOff, WifiOff, Zap } from "lucide-react";
 
 import { supabase, fetchAllEndpoints } from "@/lib/supabase";
 import { usePanelLanding } from "@/hooks/usePanelLanding";
@@ -14,7 +14,7 @@ const PanelLanding = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const { panel, loading, notFound, disabled, redirectTo, slowNetwork } = usePanelLanding(slug);
+  const { panel, loading, notFound, timedOut, disabled, redirectTo, slowNetwork } = usePanelLanding(slug);
 
   // Portal login state
   const [mode, setMode] = useState<"choose" | "portal" | "admin">("choose");
@@ -104,6 +104,24 @@ const PanelLanding = () => {
               Slow connection detected — please wait…
             </p>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (timedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <WifiOff className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h1 className="text-2xl font-black mb-2">Connection Timeout</h1>
+          <p className="text-muted-foreground text-sm mb-6">Could not reach the server. Please check your connection and try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

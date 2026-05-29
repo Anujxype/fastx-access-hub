@@ -5,6 +5,7 @@ type UsePanelLandingResult = {
   panel: ManagedPanel | null;
   loading: boolean;
   notFound: boolean;
+  timedOut: boolean;
   disabled: boolean;
   redirectTo: string | null;
   slowNetwork: boolean;
@@ -45,6 +46,7 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
   const [panel, setPanel] = useState<ManagedPanel | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [slowNetwork, setSlowNetwork] = useState(false);
@@ -64,10 +66,11 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
       if (!cancelled) setSlowNetwork(true);
     }, 3000);
 
-    // Hard safety valve: if the DB never responds, unblock the UI after 15 s.
+    // Hard safety valve: if the DB never responds in 25 s, show a retry screen
+    // rather than the misleading "Panel Not Found" message.
     const timeout = setTimeout(() => {
-      if (!cancelled) { setNotFound(true); setLoading(false); }
-    }, 15_000);
+      if (!cancelled) { setTimedOut(true); setLoading(false); }
+    }, 25_000);
 
     // Apply a fetched/cached row to state and resolve loading.
     const applyRow = (row: ManagedPanel) => {
@@ -161,6 +164,7 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
     const fetchPanel = async () => {
       setLoading(true);
       setNotFound(false);
+      setTimedOut(false);
       setDisabled(false);
       setRedirectTo(null);
       setSlowNetwork(false);
@@ -205,5 +209,5 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
     };
   }, [slug]);
 
-  return { panel, loading, notFound, disabled, redirectTo, slowNetwork };
+  return { panel, loading, notFound, timedOut, disabled, redirectTo, slowNetwork };
 };
