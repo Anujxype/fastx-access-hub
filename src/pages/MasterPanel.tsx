@@ -89,7 +89,7 @@ const MasterPanel = () => {
   // Quick-login as admin or user from master panel
   const [quickLoginPanel, setQuickLoginPanel] = useState<ManagedPanel | null>(null);
   const [quickLoginMode, setQuickLoginMode] = useState<'admin' | 'user' | null>(null);
-  const [panelKeys, setPanelKeys] = useState<{ id: string; name: string; key_value: string }[]>([]);
+  const [panelKeys, setPanelKeys] = useState<{ id: string; name: string; key_value: string; expires_at: string | null }[]>([]);
   const [panelKeysLoading, setPanelKeysLoading] = useState(false);
 
   // Admin management
@@ -419,11 +419,12 @@ const MasterPanel = () => {
     if (mode === 'user') {
       setPanelKeysLoading(true);
       const { data } = await supabase
-        .from('access_keys')
-        .select('id, name, key_value')
+        .from('api_keys')
+        .select('id, name, key_value, expires_at')
         .eq('panel_id', panel.id)
         .eq('is_active', true)
-        .limit(30);
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .limit(50);
       setPanelKeys(data || []);
       setPanelKeysLoading(false);
     }
