@@ -21,25 +21,45 @@ const clearPanelSessions = (panelId: string) => {
   }
 };
 
-// ── Panel row cache (sessionStorage, 2-min TTL) ──────────────────────────────
-const PANEL_CACHE_TTL = 2 * 60 * 1000;
+// ── Panel row cache (sessionStorage 2-min + localStorage 10-min TTL) ─────────
+// sessionStorage: fast, per-tab. localStorage: survives new tabs/PC browser reopen.
+const PANEL_CACHE_TTL_SESSION = 2 * 60 * 1000;   // 2 min
+const PANEL_CACHE_TTL_LOCAL   = 10 * 60 * 1000;  // 10 min
 
 export const getCachedRow = (slug: string): ManagedPanel | null => {
+  const key = `cfms_pc_${slug}`;
+  // 1. Try sessionStorage first (freshest, per-tab)
   try {
-    const raw = sessionStorage.getItem(`cfms_pc_${slug}`);
-    if (!raw) return null;
-    const { row, ts }: { row: ManagedPanel; ts: number } = JSON.parse(raw);
-    if (Date.now() - ts > PANEL_CACHE_TTL) { sessionStorage.removeItem(`cfms_pc_${slug}`); return null; }
-    return row;
-  } catch { return null; }
+    const raw = sessionStorage.getItem(key);
+    if (raw) {
+      const { row, ts }: { row: ManagedPanel; ts: number } = JSON.parse(raw);
+      if (Date.now() - ts <= PANEL_CACHE_TTL_SESSION) return row;
+      sessionStorage.removeItem(key);
+    }
+  } catch { /* ignore */ }
+  // 2. Fall back to localStorage (persists across tabs and PC browser sessions)
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const { row, ts }: { row: ManagedPanel; ts: number } = JSON.parse(raw);
+      if (Date.now() - ts <= PANEL_CACHE_TTL_LOCAL) return row;
+      localStorage.removeItem(key);
+    }
+  } catch { /* ignore */ }
+  return null;
 };
 
 export const setCachedRow = (slug: string, row: ManagedPanel) => {
-  try { sessionStorage.setItem(`cfms_pc_${slug}`, JSON.stringify({ row, ts: Date.now() })); } catch {}
+  const payload = JSON.stringify({ row, ts: Date.now() });
+  const key = `cfms_pc_${slug}`;
+  try { sessionStorage.setItem(key, payload); } catch { /* ignore */ }
+  try { localStorage.setItem(key, payload); } catch { /* ignore */ }
 };
 
 export const invalidateCache = (slug: string) => {
-  try { sessionStorage.removeItem(`cfms_pc_${slug}`); } catch {}
+  const key = `cfms_pc_${slug}`;
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+  try { localStorage.removeItem(key); } catch { /* ignore */ }
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -115,59 +135,82 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
       setLoading(false);
     };
 
-    // Attempt a single DB fetch with automatic retry on transient network errors
-    // OR on Supabase error responses (e.g. RPC timeout, 5xx, RLS glitch).
-    const fetchWithRetry = async (retriesLeft: number): Promise<void> => {
-      try {
-        const { data, error } = await supabase.rpc("get_panel_by_slug", { p_slug: slugLower });
-        if (cancelled) return;
-        const row = Array.isArray(data) ? data[0] : data;
+    // Race Supabase against Firebase.
+    // Strategy: start the Supabase RPC immediately. If it hasn't resolved in
+    // FIREBASE_RACE_DELAY_MS, also fire a Firebase fetch. Whichever resolves
+    // first (with a valid row) wins — the other result is discarded.
+    // This means on Supabase cold-starts (5-15 s) users get the Firebase result
+    // in ~5-6 s instead of waiting 20+ s through retry cycles.
+    const FIREBASE_RACE_DELAY_MS = 5_000;
 
-        // Supabase returned an error object — treat it like a transient failure
-        // and retry before giving up, just like we do for thrown exceptions.
-        if (error) {
-          if (retriesLeft > 0) {
-            await new Promise(res => setTimeout(res, 1500 * (3 - retriesLeft)));
-            return fetchWithRetry(retriesLeft - 1);
-          }
-          clearTimeout(timeout);
-          clearTimeout(slowTimer);
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
+    const fetchWithRace = async (): Promise<void> => {
+      let resolved = false;
 
-        // No error but no row → the slug genuinely doesn't exist.
-        if (!row) {
-          clearTimeout(timeout);
-          clearTimeout(slowTimer);
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-
-        setCachedRow(slugLower, row as ManagedPanel);
-        applyRow(row as ManagedPanel);
-      } catch {
-        if (cancelled) return;
-        if (retriesLeft > 0) {
-          // Exponential back-off: 1.5 s → 3 s
-          await new Promise(res => setTimeout(res, 1500 * (3 - retriesLeft)));
-          return fetchWithRetry(retriesLeft - 1);
-        }
-        // All Supabase retries exhausted — try Firebase as last resort
-        clearTimeout(slowTimer);
-        const fbRow = await fbGetPanelBySlug(slugLower);
-        if (cancelled) return;
-        if (fbRow) {
-          setCachedRow(slugLower, fbRow);
-          applyRow(fbRow);
-          clearTimeout(timeout);
-          return;
+      const resolveRow = (row: ManagedPanel, source: 'supabase' | 'firebase') => {
+        if (resolved || cancelled) return;
+        resolved = true;
+        if (source === 'firebase') {
+          // Still write to Supabase cache so future hot-path is fast.
+          setCachedRow(slugLower, row);
+        } else {
+          setCachedRow(slugLower, row);
         }
         clearTimeout(timeout);
-        setNotFound(true);
-        setLoading(false);
+        clearTimeout(slowTimer);
+        applyRow(row);
+      };
+
+      // ── Supabase path ──────────────────────────────────────────────────────
+      const supabasePromise = (async () => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const { data, error } = await supabase.rpc('get_panel_by_slug', { p_slug: slugLower });
+            if (cancelled || resolved) return;
+            if (error) {
+              if (attempt < 1) { await new Promise(r => setTimeout(r, 1500)); continue; }
+              return; // let firebase win
+            }
+            const row = Array.isArray(data) ? data[0] : data;
+            if (!row) {
+              // Genuine 404 — only set notFound if Firebase also found nothing
+              if (!resolved) {
+                // Wait briefly for firebase in case it has the data
+                await new Promise(r => setTimeout(r, 500));
+                if (!resolved) {
+                  clearTimeout(timeout); clearTimeout(slowTimer);
+                  setNotFound(true); setLoading(false);
+                }
+              }
+              return;
+            }
+            resolveRow(row as ManagedPanel, 'supabase');
+            return;
+          } catch {
+            if (cancelled || resolved) return;
+            if (attempt < 1) { await new Promise(r => setTimeout(r, 1500)); continue; }
+          }
+        }
+      })();
+
+      // ── Firebase path (starts after delay if Supabase hasn't responded) ───
+      const firebasePromise = new Promise<void>(resolveFirebase => {
+        setTimeout(async () => {
+          if (resolved || cancelled) { resolveFirebase(); return; }
+          try {
+            const fbRow = await fbGetPanelBySlug(slugLower);
+            if (cancelled || resolved) { resolveFirebase(); return; }
+            if (fbRow) resolveRow(fbRow, 'firebase');
+          } catch { /* ignore */ }
+          resolveFirebase();
+        }, FIREBASE_RACE_DELAY_MS);
+      });
+
+      await Promise.all([supabasePromise, firebasePromise]);
+
+      // If neither source returned a row and nothing resolved yet
+      if (!resolved && !cancelled) {
+        clearTimeout(timeout); clearTimeout(slowTimer);
+        setNotFound(true); setLoading(false);
       }
     };
 
@@ -206,8 +249,8 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
         return;
       }
 
-      // No cache — fetch from DB with retry on transient errors.
-      await fetchWithRetry(2);
+      // No cache — fetch from DB, racing Supabase against Firebase.
+      await fetchWithRace();
     };
 
     fetchPanel();

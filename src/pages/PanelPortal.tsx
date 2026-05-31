@@ -18,12 +18,17 @@ const iconMap: Record<string, any> = {
 };
 
 const getCachedPanel = (slug: string): ManagedPanel | null => {
-  try {
-    const raw = sessionStorage.getItem(`cfms_pc_${slug.toLowerCase()}`);
-    if (!raw) return null;
-    const { row } = JSON.parse(raw) as { row: ManagedPanel };
-    return row || null;
-  } catch { return null; }
+  const key = `cfms_pc_${slug.toLowerCase()}`;
+  // Check sessionStorage first (fastest, per-tab), then localStorage (cross-tab/session)
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      const raw = store.getItem(key);
+      if (!raw) continue;
+      const { row } = JSON.parse(raw) as { row: ManagedPanel };
+      if (row) return row;
+    } catch { /* ignore */ }
+  }
+  return null;
 };
 
 const PanelPortal = () => {
