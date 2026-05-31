@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Key, Loader2, Lock, Shield, ShieldOff, WifiOff, Zap } from "lucide-react";
 
 import { supabase, fetchAllEndpoints } from "@/lib/supabase";
-import { fbGetPanelBySlug } from "@/lib/firebase";
+import { fbGetPanelBySlug, fbValidateKey, logFallbackEvent } from "@/lib/firebase";
 import { usePanelLanding } from "@/hooks/usePanelLanding";
 import PanelLandingScaffold from "@/components/panel/PanelLandingScaffold";
 import PanelLandingHeader from "@/components/panel/PanelLandingHeader";
@@ -39,48 +39,56 @@ const PanelLanding = () => {
     setLoginLoading(true);
     setError("");
 
-    try {
-      // RPC validates + atomically increments uses, scoped to this panel
-      const { data, error: dbError } = await supabase.rpc("validate_panel_access_key", {
-        p_key: key.trim(),
-        p_panel_id: panel.id,
-      });
+    // Race Firebase key lookup + Supabase RPC simultaneously.
+    // Firebase (Firestore) is always warm ~200ms; Supabase may cold-start.
+    // Whoever resolves first with a valid result wins.
+    let done = false;
+
+    const finish = (
+      keyValue: string, name: string, id: string, panelId: string
+    ) => {
+      if (done) return;
+      done = true;
+      localStorage.setItem(`cfms_portal_${panelId}`, "true");
+      localStorage.setItem("cfms_key", keyValue);
+      localStorage.setItem("cfms_key_name", name);
+      localStorage.setItem("cfms_key_id", id);
+      localStorage.setItem("cfms_panel_id", panelId);
+      navigate(`/${slug}/portal`);
+    };
+
+    // Firebase path — validates in-memory mirror, instant on warm Firestore
+    const fbPromise = fbValidateKey(key.trim()).then(fbRow => {
+      if (done || !fbRow) return;
+      // Verify key belongs to this panel
+      if (fbRow.panel_id && fbRow.panel_id !== panel.id) return;
+      logFallbackEvent(`portal-login:${slug}`, 'Firebase validated key');
+      finish(fbRow.key_value, fbRow.name, fbRow.id, fbRow.panel_id ?? panel.id);
+    }).catch(() => {});
+
+    // Supabase RPC path — authoritative, atomically increments uses
+    const rpcPromise = supabase.rpc("validate_panel_access_key", {
+      p_key: key.trim(),
+      p_panel_id: panel.id,
+    }).then(({ data, error: dbError }) => {
+      if (done) return;
       if (dbError) throw dbError;
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) {
-        setError("Invalid, inactive, or expired access key");
-        setLoginLoading(false);
+        if (!done) { done = true; setError("Invalid, inactive, or expired access key"); setLoginLoading(false); }
         return;
       }
+      finish(row.key_value, row.name, row.id, panel.id);
+    });
 
-      localStorage.setItem(`cfms_portal_${panel.id}`, "true");
-      localStorage.setItem("cfms_key", row.key_value);
-      localStorage.setItem("cfms_key_name", row.name);
-      localStorage.setItem("cfms_key_id", row.id);
-      localStorage.setItem("cfms_panel_id", panel.id);
-
-      navigate(`/${slug}/portal`);
+    try {
+      await Promise.race([fbPromise, rpcPromise]);
+      // If Firebase won the race, Supabase RPC is still running in background — let it finish for the use-count increment
+      if (done) await rpcPromise.catch(() => {}); // fire-and-forget increment, ignore errors
     } catch (err: unknown) {
-      // Supabase RPC failed (cold start / timeout) — validate against Firebase api_keys mirror
-      try {
-        const { fbValidateKey } = await import('@/lib/firebase');
-        const fbRow = await fbValidateKey(key.trim());
-        if (fbRow) {
-          // Also verify the key belongs to this panel via cached panel data
-          const cachedPanel = await fbGetPanelBySlug(slug?.toLowerCase() ?? '');
-          const targetPanelId = cachedPanel?.id ?? panel.id;
-          localStorage.setItem(`cfms_portal_${targetPanelId}`, "true");
-          localStorage.setItem("cfms_key", fbRow.key_value);
-          localStorage.setItem("cfms_key_name", fbRow.name);
-          localStorage.setItem("cfms_key_id", fbRow.id);
-          localStorage.setItem("cfms_panel_id", targetPanelId);
-          navigate(`/${slug}/portal`);
-          return;
-        }
-      } catch { /* ignore firebase error, fall through to original error */ }
-      setError(err instanceof Error ? err.message : "Connection error");
+      if (!done) setError(err instanceof Error ? err.message : "Connection error");
     } finally {
-      setLoginLoading(false);
+      if (!done) setLoginLoading(false);
     }
   };
 
@@ -90,39 +98,62 @@ const PanelLanding = () => {
     setLoginLoading(true);
     setError("");
 
-    try {
-      // Server-side verification — panel_password is no longer exposed to anon
-      const { data, error: rpcErr } = await supabase.rpc("verify_panel_password", {
-        p_panel_id: panel.id,
-        p_password: password,
-      });
-      if (rpcErr) throw rpcErr;
-      if (data === true) {
+    // Fast path: panel object was already loaded from Firebase or cache — password is in hand.
+    // Zero network calls, instant authentication.
+    if (panel.panel_password) {
+      if (password === panel.panel_password) {
         localStorage.setItem(`cfms_panel_${panel.id}`, "true");
-        // adminApi helper reads this to call panel_admin_* RPCs server-side
         localStorage.setItem(`cfms_panel_pwd_${panel.id}`, password);
         navigate(`/${slug}/admin`);
       } else {
         setError("Invalid panel password");
+        setLoginLoading(false);
       }
+      return;
+    }
+
+    // Slow path: panel_password not in loaded panel (Supabase anon RLS stripped it).
+    // Race Firebase (warm, ~200ms) + Supabase RPC simultaneously.
+    let done = false;
+
+    const fbPath = fbGetPanelBySlug(slug?.toLowerCase() ?? '').then(cached => {
+      if (done) return;
+      const pw = cached?.panel_password;
+      if (!pw) return; // no password in Firebase either, let Supabase win
+      done = true;
+      if (password === pw) {
+        logFallbackEvent(`admin-login:${slug}`, 'Firebase verified panel password');
+        localStorage.setItem(`cfms_panel_${panel.id}`, "true");
+        localStorage.setItem(`cfms_panel_pwd_${panel.id}`, password);
+        navigate(`/${slug}/admin`);
+      } else {
+        setError("Invalid panel password");
+        setLoginLoading(false);
+      }
+    }).catch(() => {});
+
+    const rpcPath = supabase.rpc("verify_panel_password", {
+      p_panel_id: panel.id,
+      p_password: password,
+    }).then(({ data, error: rpcErr }) => {
+      if (done) return;
+      if (rpcErr) throw rpcErr;
+      done = true;
+      if (data === true) {
+        localStorage.setItem(`cfms_panel_${panel.id}`, "true");
+        localStorage.setItem(`cfms_panel_pwd_${panel.id}`, password);
+        navigate(`/${slug}/admin`);
+      } else {
+        setError("Invalid panel password");
+        setLoginLoading(false);
+      }
+    });
+
+    try {
+      await Promise.race([fbPath, rpcPath]);
+      if (done) await rpcPath.catch(() => {}); // let Supabase finish in background
     } catch (err: unknown) {
-      // Supabase RPC failed — fall back to Firebase panel mirror for password check
-      try {
-        const cachedPanel = await fbGetPanelBySlug(slug?.toLowerCase() ?? '');
-        const panelPassword = cachedPanel?.panel_password ?? panel.panel_password;
-        if (panelPassword && password === panelPassword) {
-          localStorage.setItem(`cfms_panel_${panel.id}`, "true");
-          localStorage.setItem(`cfms_panel_pwd_${panel.id}`, password);
-          navigate(`/${slug}/admin`);
-          return;
-        } else if (panelPassword) {
-          setError("Invalid panel password");
-          return;
-        }
-      } catch { /* ignore, fall through */ }
-      setError(err instanceof Error ? err.message : "Connection error");
-    } finally {
-      setLoginLoading(false);
+      if (!done) { setError(err instanceof Error ? err.message : "Connection error"); setLoginLoading(false); }
     }
   };
 
