@@ -494,6 +494,12 @@ const MasterPanel = () => {
   const handleLogout = async () => {
     localStorage.removeItem('cfms_master');
     localStorage.removeItem('cfms_master_role');
+    // Quick-login (loginAsUser / loginAsAdmin) writes these to shared localStorage;
+    // clean them up so they don't ghost into other pages after master logout.
+    localStorage.removeItem('cfms_key');
+    localStorage.removeItem('cfms_key_name');
+    localStorage.removeItem('cfms_key_id');
+    localStorage.removeItem('cfms_panel_id');
     await signOut();
     navigate('/master-login');
   };

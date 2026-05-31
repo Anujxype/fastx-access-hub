@@ -70,6 +70,7 @@ const Portal = () => {
     localStorage.removeItem('cfms_key');
     localStorage.removeItem('cfms_key_name');
     localStorage.removeItem('cfms_key_id');
+    localStorage.removeItem('cfms_panel_id');
     navigate('/');
   };
 

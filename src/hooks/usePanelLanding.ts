@@ -96,6 +96,9 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
     // Apply a fetched/cached row to state and resolve loading.
     const applyRow = (row: ManagedPanel) => {
       if (cancelled) return;
+      // Reset any error states — Firebase may resolve after Supabase returned 404/timeout.
+      setNotFound(false);
+      setTimedOut(false);
       setSlowNetwork(false);
       setPanel(row);
       const expired = row.expiry_date && new Date(row.expiry_date) < new Date();
