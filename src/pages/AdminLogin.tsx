@@ -15,8 +15,8 @@ const AdminLogin = () => {
     setError('');
     if (password.trim() === ADMIN_PASSWORD) {
       localStorage.setItem('cfms_admin', 'true');
-      // adminApi helper reads this to call admin_* RPCs server-side
-      localStorage.setItem('cfms_admin_pwd', password);
+      // Store trimmed password so adminApi comparison is always consistent
+      localStorage.setItem('cfms_admin_pwd', password.trim());
       navigate('/admin');
     } else {
       setError('Invalid admin password');

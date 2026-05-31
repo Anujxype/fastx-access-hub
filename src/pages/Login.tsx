@@ -15,32 +15,43 @@ const Login = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem('cfms_key');
-    // Only redirect to global portal if the key is NOT from a panel-specific login.
-    // Panel logins set cfms_panel_id; letting them bypass here would expose all
-    // endpoints rather than the panel-restricted set.
+    // Only redirect to global portal if logged in with a GLOBAL key (no panel scope).
+    // Panel logins set cfms_panel_id; if that's set the key is panel-scoped and
+    // should NOT get access to the global /portal (all endpoints).
     const panelId = localStorage.getItem('cfms_panel_id');
     if (stored && !panelId) navigate('/portal');
     // Pre-warm endpoint cache while user types their key so Portal renders instantly.
-    else void fetchAllEndpoints();
+    else {
+      // Clear any stale panel scope that might have leaked from a previous panel session
+      if (stored && panelId) {
+        localStorage.removeItem('cfms_key');
+        localStorage.removeItem('cfms_key_name');
+        localStorage.removeItem('cfms_key_id');
+        localStorage.removeItem('cfms_panel_id');
+      }
+      void fetchAllEndpoints();
+    }
   }, [navigate]);
 
   const handleLogin = async () => {
     if (!key.trim()) return;
     setLoading(true);
     setError('');
+    let navigated = false;
     try {
       // RPC validates + atomically increments uses, returns null if invalid/expired/disabled
       const { data, error: dbError } = await supabase.rpc('validate_access_key', { p_key: key.trim() });
       if (dbError) throw dbError;
       const row = Array.isArray(data) ? data[0] : data;
-      if (!row) { setError('Invalid, inactive, or expired access key'); setLoading(false); return; }
+      if (!row) { setError('Invalid, inactive, or expired access key'); return; }
 
       localStorage.setItem('cfms_key', row.key_value);
       localStorage.setItem('cfms_key_name', row.name);
       localStorage.setItem('cfms_key_id', row.id);
+      // Ensure no stale panel scope bleeds into the global portal
+      localStorage.removeItem('cfms_panel_id');
 
-      // Navigate immediately — Portal.tsx fetches the broadcast itself on mount
-      // so there's no need to write to localStorage before navigating.
+      navigated = true;
       navigate('/portal');
     } catch (err: unknown) {
       // Supabase failed (timeout / cold start) — try Firebase as fallback
@@ -49,12 +60,15 @@ const Login = () => {
         localStorage.setItem('cfms_key', fbRow.key_value);
         localStorage.setItem('cfms_key_name', fbRow.name);
         localStorage.setItem('cfms_key_id', fbRow.id);
+        localStorage.removeItem('cfms_panel_id');
+        navigated = true;
         navigate('/portal');
         return;
       }
       setError(err instanceof Error ? err.message : 'Connection error');
     } finally {
-      setLoading(false);
+      // Only reset loading if we didn't navigate away (avoids state update on unmounted component)
+      if (!navigated) setLoading(false);
     }
   };
 
