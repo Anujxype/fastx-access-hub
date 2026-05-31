@@ -160,3 +160,107 @@ export async function fbDeleteKey(id: string): Promise<void> {
     await deleteDoc(doc(db, 'api_keys', id));
   } catch { /* non-fatal */ }
 }
+
+// ── Fallback event logging ────────────────────────────────────────────────────
+// Every time Firebase serves data instead of Supabase (cold-start bypass),
+// we log the event to a localStorage ring buffer so admins can see how often
+// Supabase cold starts are being avoided and decide whether to upgrade the plan.
+
+export interface FallbackEvent {
+  ts: number;       // unix ms
+  context: string;  // e.g. "keys:panel:abc", "panel:myslug", "keys:global"
+  detail?: string;  // optional free-text (e.g. "3 keys served")
+}
+
+const FB_LOG_KEY = 'cfms_fb_fallback_log';
+const FB_LOG_MAX = 100;
+
+export function logFallbackEvent(context: string, detail?: string): void {
+  try {
+    const existing: FallbackEvent[] = JSON.parse(localStorage.getItem(FB_LOG_KEY) || '[]');
+    existing.unshift({ ts: Date.now(), context, detail });
+    localStorage.setItem(FB_LOG_KEY, JSON.stringify(existing.slice(0, FB_LOG_MAX)));
+  } catch { /* non-fatal */ }
+  if (import.meta.env.DEV) {
+    console.info(`[FB Fallback] ${context}${detail ? ': ' + detail : ''}`);
+  }
+}
+
+export function getFallbackLog(): FallbackEvent[] {
+  try { return JSON.parse(localStorage.getItem(FB_LOG_KEY) || '[]'); }
+  catch { return []; }
+}
+
+export function clearFallbackLog(): void {
+  try { localStorage.removeItem(FB_LOG_KEY); } catch { /* non-fatal */ }
+}
+
+// ── Reconciliation ────────────────────────────────────────────────────────────
+// Compare Supabase (source of truth) vs Firestore (read-mirror).
+// Call from the MasterPanel "Reconcile" button to detect and auto-fix drift.
+// Safe to run at any time — only writes TO Firestore, never touches Supabase.
+
+export interface ReconcileReport {
+  panelsMissing: number;   // in Supabase but not in Firestore
+  panelsPatched: number;   // in both but field values drifted
+  keysMissing: number;
+  keysPatched: number;
+  fixedTotal: number;
+  checkedAt: number;
+}
+
+export async function fbReconcile(
+  supabasePanels: ManagedPanel[],
+  supabaseKeys: ApiKey[]
+): Promise<ReconcileReport> {
+  const report: ReconcileReport = {
+    panelsMissing: 0, panelsPatched: 0,
+    keysMissing: 0,   keysPatched: 0,
+    fixedTotal: 0,    checkedAt: Date.now(),
+  };
+
+  // Fetch current Firestore state in parallel
+  const [fbPanels, fbKeys] = await Promise.all([
+    fbGetAllPanels(),
+    fbListAllKeys(),
+  ]);
+
+  const fbPanelMap = new Map(fbPanels.map(p => [p.id, p]));
+  const fbKeyMap   = new Map(fbKeys.map(k => [k.id, k]));
+
+  const fixes: Promise<void>[] = [];
+
+  // Compare panels — check mutable fields that can drift
+  for (const sp of supabasePanels) {
+    const fp = fbPanelMap.get(sp.id);
+    if (!fp) {
+      report.panelsMissing++;
+      fixes.push(fbUpsertPanel(sp));
+    } else {
+      const drifted =
+        fp.is_active      !== sp.is_active      ||
+        fp.expiry_date    !== sp.expiry_date    ||
+        fp.panel_password !== sp.panel_password ||
+        JSON.stringify((fp.allowed_endpoints ?? []).slice().sort()) !==
+        JSON.stringify((sp.allowed_endpoints ?? []).slice().sort());
+      if (drifted) { report.panelsPatched++; fixes.push(fbUpsertPanel(sp)); }
+    }
+  }
+
+  // Compare keys — check active status and expiry
+  for (const sk of supabaseKeys) {
+    const fk = fbKeyMap.get(sk.id);
+    if (!fk) {
+      report.keysMissing++;
+      fixes.push(fbUpsertKey(sk));
+    } else {
+      const drifted = fk.is_active !== sk.is_active || fk.expires_at !== sk.expires_at;
+      if (drifted) { report.keysPatched++; fixes.push(fbUpsertKey(sk)); }
+    }
+  }
+
+  await Promise.all(fixes);
+  report.fixedTotal = report.panelsMissing + report.panelsPatched +
+                      report.keysMissing   + report.keysPatched;
+  return report;
+}

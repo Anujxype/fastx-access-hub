@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, type ManagedPanel } from "@/lib/supabase";
-import { fbGetPanelBySlug } from "@/lib/firebase";
+import { fbGetPanelBySlug, logFallbackEvent } from "@/lib/firebase";
 
 type UsePanelLandingResult = {
   panel: ManagedPanel | null;
@@ -153,7 +153,8 @@ export const usePanelLanding = (slug: string | undefined): UsePanelLandingResult
         if (resolved || cancelled) return;
         resolved = true;
         if (source === 'firebase') {
-          // Still write to Supabase cache so future hot-path is fast.
+          // Log the fallback so admins can track how often Supabase cold starts are bypassed
+          logFallbackEvent(`panel:${slugLower}`, 'Firebase served panel before Supabase');
           setCachedRow(slugLower, row);
         } else {
           setCachedRow(slugLower, row);

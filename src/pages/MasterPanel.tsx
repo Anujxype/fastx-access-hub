@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type ManagedPanel, type Broadcast, ALL_ENDPOINT_PATHS, ENDPOINTS, fetchAllEndpoints, invalidateEndpointsCache, generateLicenseKey, generateSlug } from '@/lib/supabase';
-import { fbUpsertPanel, fbUpdatePanel, fbDeletePanel, fbGetAllPanels } from '@/lib/firebase';
+import { fbUpsertPanel, fbUpdatePanel, fbDeletePanel, fbGetAllPanels, fbReconcile, getFallbackLog, clearFallbackLog, type ReconcileReport } from '@/lib/firebase';
 import CFMSLogo from '@/components/CFMSLogo';
 import { useMasterAuth, type MasterRole } from '@/hooks/useMasterAuth';
 import { toast } from '@/hooks/use-toast';
@@ -12,7 +12,8 @@ import {
   Settings, Send as SendIcon, BarChart3, FileText, Key,
   Loader2, RefreshCw, Copy, Eye, EyeOff, Lock,
   ArrowLeft, Shield, Activity, Globe, Clock, Users,
-  CheckSquare, Square, ChevronRight, Pencil, UserCircle, ExternalLink, LogIn
+  CheckSquare, Square, ChevronRight, Pencil, UserCircle, ExternalLink, LogIn,
+  GitMerge, Zap
 } from 'lucide-react';
 
 // Heavy admin tabs are split out so opening MasterPanel doesn't pull recharts
@@ -89,6 +90,13 @@ const MasterPanel = () => {
 
   // Firebase sync
   const [fbSyncing, setFbSyncing] = useState(false);
+
+  // Reconciliation
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileReport, setReconcileReport] = useState<ReconcileReport | null>(null);
+  const [showFallbackLog, setShowFallbackLog] = useState(false);
+  const fallbackLog = getFallbackLog();
+  const todayFallbacks = fallbackLog.filter(e => Date.now() - e.ts < 86_400_000).length;
 
   // Quick-login as admin or user from master panel
   const [quickLoginPanel, setQuickLoginPanel] = useState<ManagedPanel | null>(null);
@@ -452,6 +460,30 @@ const MasterPanel = () => {
     }
   };
 
+  const reconcileWithFirebase = async () => {
+    if (panels.length === 0) {
+      toast({ title: 'No panels to reconcile', description: 'Load panels first.', variant: 'destructive' });
+      return;
+    }
+    setReconciling(true);
+    try {
+      // Also fetch all keys so we can check key-level drift
+      const { data: allKeys } = await supabase.from('api_keys').select('*');
+      const report = await fbReconcile(panels, allKeys || []);
+      setReconcileReport(report);
+      toast({
+        title: `Reconcile complete — ${report.fixedTotal} fix${report.fixedTotal !== 1 ? 'es' : ''}`,
+        description: report.fixedTotal === 0
+          ? 'Firebase is fully in sync with Supabase.'
+          : `Panels: ${report.panelsMissing} added, ${report.panelsPatched} patched. Keys: ${report.keysMissing} added, ${report.keysPatched} patched.`,
+      });
+    } catch (err: unknown) {
+      toast({ title: 'Reconcile failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setReconciling(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: 'Copied to clipboard' });
@@ -706,6 +738,59 @@ const MasterPanel = () => {
                   {fbSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   {fbSyncing ? 'Syncing…' : 'Sync to Firebase'}
                 </button>
+                <button
+                  onClick={reconcileWithFirebase}
+                  disabled={reconciling || panels.length === 0}
+                  title="Compare Supabase vs Firestore and fix any drift"
+                  className="flex items-center gap-2 text-xs px-4 py-2.5 rounded-xl border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-all disabled:opacity-40"
+                >
+                  {reconciling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GitMerge className="w-3.5 h-3.5" />}
+                  {reconciling ? 'Reconciling…' : 'Reconcile'}
+                </button>
+                {todayFallbacks > 0 && (
+                  <button
+                    onClick={() => setShowFallbackLog(f => !f)}
+                    title="Times Firebase served data today (Supabase cold-start bypasses)"
+                    className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 transition-all"
+                  >
+                    <Zap className="w-3.5 h-3.5" /> {todayFallbacks} fallback{todayFallbacks !== 1 ? 's' : ''} today
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Fallback log drawer */}
+            {showFallbackLog && (
+              <div className="glass-admin p-4 space-y-3 animate-in border border-yellow-500/20">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-yellow-400 flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5" /> Firebase Fallback Log
+                    <span className="text-muted-foreground font-normal">({fallbackLog.length} entries)</span>
+                  </h4>
+                  <button
+                    onClick={() => { clearFallbackLog(); setShowFallbackLog(false); }}
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear log
+                  </button>
+                </div>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {fallbackLog.slice(0, 30).map((e, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                      <span className="text-yellow-500/60 shrink-0 tabular-nums">
+                        {new Date(e.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="font-medium text-yellow-400/80">{e.context}</span>
+                      {e.detail && <span>{e.detail}</span>}
+                    </div>
+                  ))}
+                </div>
+                {reconcileReport && (
+                  <div className="pt-2 border-t border-white/10 text-[11px] text-muted-foreground">
+                    Last reconcile: {reconcileReport.fixedTotal} fix(es) — panels {reconcileReport.panelsMissing}↑ {reconcileReport.panelsPatched}~, keys {reconcileReport.keysMissing}↑ {reconcileReport.keysPatched}~
+                    <span className="ml-2">{new Date(reconcileReport.checkedAt).toLocaleTimeString()}</span>
+                  </div>
+                )}
               </div>
             )}
 

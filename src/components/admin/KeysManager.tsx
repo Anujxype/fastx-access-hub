@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { generateKey, type ApiKey } from '@/lib/supabase';
-import { listKeys, createKey as apiCreateKey, toggleKey as apiToggleKey, deleteKey as apiDeleteKey, resolveAuth } from '@/lib/adminApi';
-import { fbListKeysByPanel, fbListAllKeys, fbUpsertKey, fbUpdateKey, fbDeleteKey } from '@/lib/firebase';
+import { listKeys, createKey as apiCreateKey, toggleKey as apiToggleKey, deleteKey as apiDeleteKey, resolveAuth, scheduleRetry } from '@/lib/adminApi';
+import { fbListKeysByPanel, fbListAllKeys, fbUpsertKey, fbUpdateKey, fbDeleteKey, logFallbackEvent } from '@/lib/firebase';
 import {
   Plus, RefreshCw, Key, Copy, Trash2, Eye, EyeOff,
   Clock, Globe, Loader2, ToggleLeft, ToggleRight,
   Search, CheckCircle, AlertCircle, Filter, Download,
-  ArrowUpDown, Shield
+  ArrowUpDown, Shield, Zap
 } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ type FilterStatus = 'all' | 'active' | 'disabled' | 'expired';
 const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fbServing, setFbServing] = useState(false); // true while data came from Firebase
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [keyValue, setKeyValue] = useState('');
@@ -42,7 +43,13 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
         const filtered = fbKeys.filter(k => k.key_value);
         if (filtered.length > 0) {
           setKeys(filtered);
+          setFbServing(true);
           setLoading(false);
+          // Log the fallback so admins can track Supabase cold-start frequency
+          logFallbackEvent(
+            panelId ? `keys:panel:${panelId}` : 'keys:global',
+            `Firebase served ${filtered.length} key${filtered.length !== 1 ? 's' : ''}`
+          );
         }
       })
       .catch(() => {}); // never block on Firebase errors
@@ -54,6 +61,7 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
       if (signal?.cancelled) return;
       const filtered = (data || []).filter(k => k.key_value);
       setKeys(filtered);
+      setFbServing(false); // Supabase answered — clear Firebase badge
       setLoading(false);
       // Keep Firebase mirror in sync so next cold-start is instant
       filtered.forEach(k => void fbUpsertKey(k));
@@ -152,9 +160,16 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
       void fbUpdateKey(id, { is_active: newState }); // mirror to Firebase
       toast({ title: newState ? 'Key Enabled' : 'Key Disabled', description: `Key has been ${newState ? 'enabled' : 'disabled'}` });
     } catch (err) {
-      // Roll back optimistic update
-      setKeys(prev => prev.map(k => k.id === id ? { ...k, is_active: currentState } : k));
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to toggle key', variant: 'destructive' });
+      // Keep the optimistic state — Firebase already consistent.
+      // Schedule a silent background retry so Supabase catches up.
+      void fbUpdateKey(id, { is_active: newState }); // ensure Firebase is current
+      scheduleRetry(`toggleKey:${id}`, () => apiToggleKey(resolveAuth(panelId), id, newState));
+      toast({
+        title: newState ? 'Key Enabled (offline)' : 'Key Disabled (offline)',
+        description: 'Saved to Firebase. Supabase sync queued for background retry.',
+        variant: 'default',
+      });
+      if (import.meta.env.DEV) console.warn('[KeysManager] toggleKey Supabase error (will retry):', err);
     }
   };
 
@@ -280,6 +295,11 @@ const KeysManager = ({ panelId }: { panelId?: string } = {}) => {
           <h3 className="font-bold flex items-center gap-2 text-sm">
             <Key className="w-4 h-4 text-accent" />
             API Keys ({filteredKeys.length})
+            {fbServing && (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold tracking-wider" title="Data served from Firebase — Supabase waking up">
+                <Zap className="w-3 h-3" /> FIREBASE
+              </span>
+            )}
           </h3>
           <div className="flex items-center gap-2">
             <button onClick={exportKeys} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors" title="Export CSV">

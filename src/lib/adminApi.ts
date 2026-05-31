@@ -19,6 +19,52 @@ import {
   type CustomEndpoint,
 } from './supabase';
 
+// ── Background write retry ────────────────────────────────────────────────────
+// When a Supabase write fails mid cold-start, Firebase already holds the correct
+// state (optimistic updates + immediate mirroring in KeysManager / MasterPanel).
+// scheduleRetry queues the Supabase operation for silent background retry so the
+// source of truth catches up without any user action.
+//
+// Retry schedule: 10 s → 30 s → 90 s — then give up and log a warning.
+
+type RetryTask = { label: string; fn: () => Promise<void>; attempts: number };
+const _retryQueue: RetryTask[] = [];
+let _retryTimer: ReturnType<typeof setTimeout> | null = null;
+const RETRY_DELAYS_MS = [10_000, 30_000, 90_000];
+
+function _drainRetry(): void {
+  if (_retryQueue.length === 0) { _retryTimer = null; return; }
+  const task = _retryQueue[0];
+  task.fn()
+    .then(() => {
+      _retryQueue.shift();
+      if (import.meta.env.DEV) console.info(`[Retry OK] ${task.label}`);
+    })
+    .catch(() => {
+      task.attempts++;
+      if (task.attempts >= RETRY_DELAYS_MS.length) {
+        _retryQueue.shift();
+        if (import.meta.env.DEV)
+          console.warn(`[Retry GAVE UP] ${task.label} after ${task.attempts} attempts`);
+      }
+    })
+    .finally(() => {
+      if (_retryQueue.length === 0) { _retryTimer = null; return; }
+      const delay = RETRY_DELAYS_MS[Math.min(_retryQueue[0].attempts, RETRY_DELAYS_MS.length - 1)];
+      _retryTimer = setTimeout(_drainRetry, delay);
+    });
+}
+
+/**
+ * Queue a failed Supabase write for silent background retry (max 3 attempts).
+ * Firebase already holds the correct state, so this is purely a catch-up sync.
+ */
+export function scheduleRetry(label: string, fn: () => Promise<void>): void {
+  _retryQueue.push({ label, fn, attempts: 0 });
+  if (!_retryTimer) _retryTimer = setTimeout(_drainRetry, RETRY_DELAYS_MS[0]);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type AdminAuth =
   | { mode: 'master' }
   | { mode: 'admin'; password: string }
